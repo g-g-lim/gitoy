@@ -25,9 +25,14 @@ class Repository:
     def create_branch(self, name: str):
         head_branch = self.get_head_branch()
         prev_ref_name = head_branch.ref_name
+        create_ref_name = f"refs/heads/{name}"
+
+        if create_ref_name == head_branch.ref_name:
+            return {'ref': head_branch, 'created': False, 'updated': False}
 
         if head_branch.target_object_id is None:
-            self.db.update_ref(head_branch, {'ref_name': f"refs/heads/{name}"})
+            self.db.update_ref(head_branch, {'ref_name': create_ref_name})
+            head_branch.ref_name = create_ref_name
             return {'ref': head_branch, 'created': False, 'updated': True, 'prev_ref_name': prev_ref_name}
 
         new_branch = self.db.create_branch(name, head_branch.target_object_id)
@@ -35,8 +40,12 @@ class Repository:
         
     def update_head_branch(self, branch_name: str):
         head_branch = self.db.get_head_branch()
-        if head_branch.ref_name == f"refs/heads/{branch_name}":
-            return
-        head_branch.ref_name = f"refs/heads/{branch_name}"
-        self.db.update_ref(head_branch)
-        return head_branch
+        prev_ref_name = head_branch.ref_name
+        create_ref_name = f"refs/heads/{branch_name}"
+
+        if prev_ref_name == create_ref_name:
+            return None
+
+        self.db.update_ref(head_branch, {'ref_name': create_ref_name})
+        head_branch.ref_name = create_ref_name
+        return {'prev_ref_name': prev_ref_name, 'ref': head_branch}

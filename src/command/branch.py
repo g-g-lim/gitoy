@@ -24,5 +24,12 @@ class Branch:
         result = self.repository.create_branch(name)
         if result['created']:
             self.console.success(f"Branch {name} created")
-        else:
+        elif result['updated']:
             self.console.info(f"Branch {result['prev_ref_name']} -> {result['ref'].ref_name} updated")
+        else:
+            self.console.info(f"Branch refs/heads/{name} already exists")
+    
+    def update(self, name: str):
+        result = self.repository.update_head_branch(name)
+        if result is not None:
+            self.console.success(f"Branch {result['prev_ref_name']} -> {result['ref'].ref_name} updated")
