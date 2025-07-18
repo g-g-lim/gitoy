@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import sqlite3
 
+from database.entity.entity import Entity
 from util.constant import GITOY_DB_FILE, GITOY_DIR
 
 
@@ -19,10 +20,17 @@ class SQLite:
         self.conn.execute("PRAGMA temp_store = MEMORY")
 
     def create_table(self, table_name: str, columns: list[str]):
-        print(table_name, columns)
         self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} ({', '.join(columns)})")
         self.conn.commit()
 
     def list_tables(self):
         self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         return [table[0] for table in  self.cursor.fetchall()]
+
+    def insert(self, entity: Entity):
+        columns = entity.__dataclass_fields__.keys()
+        values = [getattr(entity, col) for col in columns]
+        placeholders = ", ".join(["?"] * len(values))
+        sql = f"INSERT INTO {entity.table_name()} ({', '.join(columns)}) VALUES ({placeholders})"
+        self.cursor.execute(sql, values)
+        self.conn.commit()

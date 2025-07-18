@@ -3,14 +3,14 @@ repos:
     hooks:
       - id: ty-type-check
         name: ty type checking
-        entry: uvx ty check
+        entry: /Users/imgabgi/.local/bin/uvx ty check
         language: system
         files: \.py$
         pass_filenames: false
         args: [.]
       - id: ruff
         name: ruff
-        entry: uvx ruff check
+        entry: /Users/imgabgi/.local/bin/uvx ruff check
         language: system 
         files: \.py$
         pass_filenames: false

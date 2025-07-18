@@ -17,6 +17,7 @@ class Repository:
     def init(self):
         self.gitoy_dir.mkdir(parents=True, exist_ok=True)
         self.db.init()
+        self.db.create_main_branch()
 
     def add(self, file: str):
         pass
