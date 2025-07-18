@@ -7,4 +7,11 @@ repos:
         language: system
         files: \.py$
         pass_filenames: false
-        args: [.] 
+        args: [.]
+      - id: ruff
+        name: ruff
+        entry: uvx ruff check
+        language: system 
+        files: \.py$
+        pass_filenames: false
+        args: [.]
