@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from database.sqlite import SQLite
 from database.entity.blob import Blob
 from database.entity.commit import Commit
@@ -70,3 +71,10 @@ class Database:
     
     def update_ref(self, ref: Ref, update_values: dict):
         self.sqlite.update(ref, update_values)
+
+    def get_branch(self, name: str) -> Optional[Ref]:
+        refs = self.sqlite.select(f"SELECT * FROM {Ref.table_name()} WHERE ref_name = '{name}' AND ref_type = 'branch'")
+        return Ref(**refs[0]) if refs else None
+
+    def delete_branch(self, branch: Ref):
+        self.sqlite.delete(branch)  

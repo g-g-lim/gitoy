@@ -49,3 +49,12 @@ class Repository:
         self.db.update_ref(head_branch, {'ref_name': create_ref_name})
         head_branch.ref_name = create_ref_name
         return {'prev_ref_name': prev_ref_name, 'ref': head_branch}
+
+    def delete_branch(self, name: str):
+        branch = self.db.get_branch(f"refs/heads/{name}")
+        if branch is None:
+            return {'deleted': False, 'not_found': True}
+        if branch.head:
+            return {'deleted': False, 'head': True}
+        self.db.delete_branch(branch)
+        return {'deleted': True}

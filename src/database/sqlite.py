@@ -36,23 +36,21 @@ class SQLite:
         self.cursor.execute(sql, values)
         self.conn.commit()
 
-    def select(self, sql: str) -> list[dict]:
-        self.cursor.execute(sql)
+    def select(self, query: str) -> list[dict]:
+        self.cursor.execute(query)
         columns = [desc[0] for desc in self.cursor.description]
         rows = self.cursor.fetchall()
         return [dict(zip(columns, row)) for row in rows]
 
     def update(self, entity: Entity, update_values: dict):
-        columns = entity.__dataclass_fields__.keys()
-        values = []
         set_clause = ", ".join([f"{col} = ?" for col in update_values.keys()])
-        
-        primary_key = list(columns)[0]
-        primary_key_value = getattr(entity, primary_key)
-        
-        sql = f"UPDATE {entity.table_name()} SET {set_clause} WHERE {primary_key} = ?"
-        values.extend(update_values.values())
-        values.append(primary_key_value)
-
+        sql = f"UPDATE {entity.table_name()} SET {set_clause} WHERE {entity.primary_key_column()} = ?"
+        values = list(update_values.values())
+        values.append(entity.primary_key)
         self.cursor.execute(sql, values)
+        self.conn.commit()
+
+    def delete(self, entity: Entity):
+        sql = f"DELETE FROM {entity.table_name()} WHERE {entity.primary_key_column()} = ?"
+        self.cursor.execute(sql, [entity.primary_key])
         self.conn.commit()

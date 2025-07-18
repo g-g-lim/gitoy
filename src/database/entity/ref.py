@@ -35,6 +35,14 @@ class Ref(Entity):
     @property
     def branch_name(self):
         return self.ref_name.split("/")[-1]
+
+    @property
+    def primary_key(self):
+        return self.ref_name
+
+    @staticmethod
+    def primary_key_column():
+        return "ref_name"
     
     @staticmethod
     def table_name():
