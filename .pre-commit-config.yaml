@@ -3,7 +3,7 @@ repos:
     hooks:
       - id: ty-type-check
         name: ty type checking
-        entry: /Users/imgabgi/.local/bin/uvx ty check
+        entry: ./scripts/run-ty.sh
         language: system
         files: \.py$
         pass_filenames: false
@@ -15,3 +15,10 @@ repos:
         files: \.py$
         pass_filenames: false
         args: [.]
+
+# Alternative configurations (uncomment if needed)
+# For absolute paths:
+# entry: /Users/imgabgi/.local/bin/uvx ty check
+# 
+# For PATH export:
+# entry: bash -c 'export PATH="$HOME/.local/bin:$PATH" && uvx ty check .'

@@ -41,6 +41,21 @@ uv run pre-commit run --all-files
 
 The hooks will prevent commits if there are type checking errors.
 
+#### Troubleshooting VSCode Commits
+
+If you encounter issues with VSCode not finding `uvx` when committing:
+
+1. **Current Solution**: The project uses absolute paths in `.pre-commit-config.yaml`
+2. **Alternative**: If issues persist, you can modify the configuration to use:
+   ```yaml
+   entry: bash -c 'export PATH="$HOME/.local/bin:$PATH" && uvx ty check .'
+   ```
+
+3. **Manual Setup**: Ensure your shell profile (`.zshrc`, `.bash_profile`) includes:
+   ```bash
+   export PATH="$HOME/.local/bin:$PATH"
+   ```
+
 ## Usage
 
 ```bash
