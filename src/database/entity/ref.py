@@ -22,11 +22,12 @@ class Ref(Entity):
     ref_name: str  # Primary key
     ref_type: str
     is_symbolic: bool
+    head: bool
     updated_at: datetime
     target_object_id: Optional[str] = None
     symbolic_target: Optional[str] = None
     namespace: Optional[str] = None 
-
+    
     @staticmethod
     def table_name():
         return "ref"
@@ -37,6 +38,7 @@ class Ref(Entity):
             "ref_name TEXT PRIMARY KEY",
             "ref_type TEXT",
             "is_symbolic BOOLEAN",
+            "head BOOLEAN",
             "updated_at TIMESTAMP",
             "target_object_id TEXT",
             "symbolic_target TEXT",
