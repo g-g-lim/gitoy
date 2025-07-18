@@ -34,7 +34,7 @@ class Database:
 
     def create_main_branch(self):
         ref = Ref(
-            ref_name="main",
+            ref_name="refs/heads/main",
             ref_type="branch",
             head=True,
             is_symbolic=False,
