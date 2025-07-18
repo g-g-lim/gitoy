@@ -1,4 +1,4 @@
-# gitoy-2
+# gitoy
 
 A simple File Version Control CLI tool built with Python.
 
