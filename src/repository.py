@@ -28,15 +28,15 @@ class Repository:
         create_ref_name = f"refs/heads/{name}"
 
         if create_ref_name == head_branch.ref_name:
-            return Result(False, None, "Branch already exists")
+            return Result.Fail(f"Branch {create_ref_name} already exists")
 
         if head_branch.target_object_id is None:
             self.db.update_ref(head_branch, {'ref_name': create_ref_name})
             head_branch.ref_name = create_ref_name  
-            return Result(True, {'ref': head_branch, 'new': False}, None)
+            return Result.Ok({'ref': head_branch, 'new': False})
 
         new_branch = self.db.create_branch(name, head_branch.target_object_id)
-        return Result(True, {'ref': new_branch, 'new': True}, None)
+        return Result.Ok({'ref': new_branch, 'new': True})
         
     def update_head_branch(self, branch_name: str):
         head_branch = self.db.get_head_branch()
@@ -44,18 +44,18 @@ class Repository:
         create_ref_name = f"refs/heads/{branch_name}"
 
         if prev_ref_name == create_ref_name:
-            return Result(False, None, "Branch already exists")
+            return Result.Fail(f"Branch {create_ref_name} already exists")
 
         self.db.update_ref(head_branch, {'ref_name': create_ref_name})
         head_branch.ref_name = create_ref_name
-        return Result(True, head_branch, None)
+        return Result.Ok(head_branch)
 
     def delete_branch(self, name: str):
         ref_name = f"refs/heads/{name}"
         branch = self.db.get_branch(ref_name)
         if branch is None:
-            return Result(False, None, f"Branch {ref_name} not found")
+            return Result.Fail(f"Branch {ref_name} not found")
         if branch.head:
-            return Result(False, None, f"Branch {ref_name} is the head branch")
+            return Result.Fail(f"Branch {ref_name} is the head branch")
         self.db.delete_branch(branch)
-        return Result(True, None, None)
+        return Result.Ok(None)
