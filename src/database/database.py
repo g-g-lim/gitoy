@@ -47,7 +47,6 @@ class Database:
         self.sqlite.insert(ref)
 
     def list_branches(self) -> list[Ref]:
-        print(self.sqlite.gitoy_db_path)
         refs = self.sqlite.select(f"SELECT * FROM {Ref.table_name()} WHERE ref_type = 'branch'")
         return [Ref(**ref) for ref in refs]
 

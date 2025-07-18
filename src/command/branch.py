@@ -22,23 +22,22 @@ class Branch:
 
     def create(self, name: str):
         result = self.repository.create_branch(name)
-        if result['created']:
-            self.console.success(f"Branch {name} created")
-        elif result['updated']:
-            self.console.info(f"Branch {result['prev_ref_name']} -> {result['ref'].ref_name} updated")
+        if result.success:
+            if result.value['new']:
+                self.console.success(f'Branch refs/heads/{name} created')
+            else:
+                self.console.success(f"Branch {result.value['ref'].ref_name} updated")
         else:
-            self.console.info(f"Branch refs/heads/{name} already exists")
-    
+            self.console.error(result.error)
+
     def update(self, name: str):
         result = self.repository.update_head_branch(name)
-        if result is not None:
-            self.console.success(f"Branch {result['prev_ref_name']} -> {result['ref'].ref_name} updated")
+        if result.success:
+            self.console.success(f"Branch {result.value.ref_name} updated")
         
     def delete(self, name: str):
         result = self.repository.delete_branch(name)
-        if 'deleted' in result and result['deleted']:
+        if result.success:
             self.console.success(f"Branch refs/heads/{name} deleted")
-        elif 'not_found' in result and result['not_found']:
-            self.console.error(f"Branch refs/heads/{name} not found")
         else:
-            self.console.error(f"Branch refs/heads/{name} is the head branch")
+            self.console.error(result.error)

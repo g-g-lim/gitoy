@@ -1,5 +1,6 @@
-from database.database import Database
 from util.file_handler import FileHandler
+from database.database import Database
+from util.result import Result
 
 
 class Repository:
@@ -24,19 +25,18 @@ class Repository:
 
     def create_branch(self, name: str):
         head_branch = self.get_head_branch()
-        prev_ref_name = head_branch.ref_name
         create_ref_name = f"refs/heads/{name}"
 
         if create_ref_name == head_branch.ref_name:
-            return {'ref': head_branch, 'created': False, 'updated': False}
+            return Result(False, None, "Branch already exists")
 
         if head_branch.target_object_id is None:
             self.db.update_ref(head_branch, {'ref_name': create_ref_name})
-            head_branch.ref_name = create_ref_name
-            return {'ref': head_branch, 'created': False, 'updated': True, 'prev_ref_name': prev_ref_name}
+            head_branch.ref_name = create_ref_name  
+            return Result(True, {'ref': head_branch, 'new': False}, None)
 
         new_branch = self.db.create_branch(name, head_branch.target_object_id)
-        return {'ref': new_branch, 'created': True, 'updated': False}
+        return Result(True, {'ref': new_branch, 'new': True}, None)
         
     def update_head_branch(self, branch_name: str):
         head_branch = self.db.get_head_branch()
@@ -44,17 +44,18 @@ class Repository:
         create_ref_name = f"refs/heads/{branch_name}"
 
         if prev_ref_name == create_ref_name:
-            return None
+            return Result(False, None, "Branch already exists")
 
         self.db.update_ref(head_branch, {'ref_name': create_ref_name})
         head_branch.ref_name = create_ref_name
-        return {'prev_ref_name': prev_ref_name, 'ref': head_branch}
+        return Result(True, head_branch, None)
 
     def delete_branch(self, name: str):
-        branch = self.db.get_branch(f"refs/heads/{name}")
+        ref_name = f"refs/heads/{name}"
+        branch = self.db.get_branch(ref_name)
         if branch is None:
-            return {'deleted': False, 'not_found': True}
+            return Result(False, None, f"Branch {ref_name} not found")
         if branch.head:
-            return {'deleted': False, 'head': True}
+            return Result(False, None, f"Branch {ref_name} is the head branch")
         self.db.delete_branch(branch)
-        return {'deleted': True}
+        return Result(True, None, None)
