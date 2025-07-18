@@ -11,6 +11,7 @@ from command.init import Init
 from database.database import Database
 from database.sqlite import SQLite
 from command.branch import Branch
+from util.file_handler import FileHandler
 from util.console import Console
 
 
@@ -43,10 +44,12 @@ class GitoyCLI:
 
 def main():
     """Main entry point for Gitoy CLI"""
-    sqlite = SQLite()
+    file_handler = FileHandler()
+    
+    sqlite = SQLite(file_handler)
     database = Database(sqlite)
     
-    repository = Repository(database)
+    repository = Repository(database, file_handler)
     console = Console()
     command_list = [Init(repository, console), Branch(repository, console)]
 

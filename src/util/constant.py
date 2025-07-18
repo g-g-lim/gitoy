@@ -1,8 +1,6 @@
-from enum import Enum
-
 GITOY_DIR = '.gitoy'
 GITOY_DB_FILE = 'gitoy.db'
+REPOSITORY_ALREADY_INITIALIZED = 'Gitoy Repository already initialized'
 
-class GitoyMessage(Enum):
-    REPOSITORY_ALREADY_INITIALIZED = 'Gitoy Repository already initialized'
-    REPOSITORY_INITIALIZED = 'Gitoy Repository initialized'
+def INITIALIZED_MESSAGE(path):
+    return f'Gitoy Repository initialized at {path}'

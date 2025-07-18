@@ -1,26 +1,21 @@
 from termcolor import colored
 
-from util.constant import GitoyMessage
-
 class Console: 
 
     def __init__(self):
         pass
 
-    def info(self, message: GitoyMessage | str):
+    def info(self, message: str):
         self.log(message, "white")
 
-    def success(self, message: GitoyMessage | str):
+    def success(self, message: str):
         self.log(message, "green")
 
-    def warning(self, message: GitoyMessage | str):
+    def warning(self, message: str):
         self.log(message, "yellow")
 
-    def error(self, message: GitoyMessage | str):
+    def error(self, message: str):
         self.log(message, "red")
 
-    def log(self, message: GitoyMessage | str, color: str = "white"):
-        if isinstance(message, GitoyMessage):
-            print(colored(message.value, color))
-        else:
-            print(colored(message, color))
+    def log(self, message: str, color: str = "white"):
+        print(colored(message, color))

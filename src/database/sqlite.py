@@ -1,16 +1,17 @@
-import os
-from pathlib import Path
+
 import sqlite3
 
 from database.entity.entity import Entity
-from util.constant import GITOY_DB_FILE, GITOY_DIR
+from util.file_handler import FileHandler
 
 
 class SQLite:
 
-    def __init__(self):
-        self.gitoy_db_path = Path(os.getcwd(), GITOY_DIR, GITOY_DB_FILE)
-        self.gitoy_db_path.parent.mkdir(parents=True, exist_ok=True)
+    def __init__(self, file_handler: FileHandler):
+        self.gitoy_db_path = file_handler.get_repo_db_file()
+
+        if self.gitoy_db_path is None:
+            self.gitoy_db_path = file_handler.create_repo_db_file()
 
         self.conn: sqlite3.Connection = sqlite3.connect(self.gitoy_db_path.absolute())
         self.cursor: sqlite3.Cursor = self.conn.cursor()
@@ -40,3 +41,18 @@ class SQLite:
         columns = [desc[0] for desc in self.cursor.description]
         rows = self.cursor.fetchall()
         return [dict(zip(columns, row)) for row in rows]
+
+    def update(self, entity: Entity, update_values: dict):
+        columns = entity.__dataclass_fields__.keys()
+        values = []
+        set_clause = ", ".join([f"{col} = ?" for col in update_values.keys()])
+        
+        primary_key = list(columns)[0]
+        primary_key_value = getattr(entity, primary_key)
+        
+        sql = f"UPDATE {entity.table_name()} SET {set_clause} WHERE {primary_key} = ?"
+        values.extend(update_values.values())
+        values.append(primary_key_value)
+
+        self.cursor.execute(sql, values)
+        self.conn.commit()

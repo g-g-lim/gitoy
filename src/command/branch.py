@@ -19,3 +19,10 @@ class Branch:
                 self.console.success(f"* {branch.branch_name}")
             else:
                 self.console.info(branch.branch_name)
+
+    def create(self, name: str):
+        result = self.repository.create_branch(name)
+        if result['created']:
+            self.console.success(f"Branch {name} created")
+        else:
+            self.console.info(f"Branch {result['prev_ref_name']} -> {result['ref'].ref_name} updated")

@@ -26,7 +26,7 @@ class Database:
         ]
 
     def is_initialized(self):
-        return self.sqlite.gitoy_db_path.exists() and len(self.sqlite.list_tables()) == len(self.entity_list)
+        return self.sqlite.gitoy_db_path is not None and len(self.sqlite.list_tables()) == len(self.entity_list)
 
     def init(self):
         for entity in self.entity_list:
@@ -46,5 +46,27 @@ class Database:
         self.sqlite.insert(ref)
 
     def list_branches(self) -> list[Ref]:
+        print(self.sqlite.gitoy_db_path)
         refs = self.sqlite.select(f"SELECT * FROM {Ref.table_name()} WHERE ref_type = 'branch'")
         return [Ref(**ref) for ref in refs]
+
+    def create_branch(self, branch_name: str, target_object_id: str | None = None):
+        ref = Ref(
+            ref_name=f"refs/heads/{branch_name}",
+            ref_type="branch",
+            head=False,
+            is_symbolic=False,
+            updated_at=datetime.now(),
+            target_object_id=target_object_id,
+            symbolic_target=None,
+            namespace=None,
+        )
+        self.sqlite.insert(ref)
+        return ref
+    
+    def get_head_branch(self) -> Ref:
+        refs = self.sqlite.select(f"SELECT * FROM {Ref.table_name()} WHERE head = 1 AND ref_type = 'branch'")
+        return Ref(**refs[0])
+    
+    def update_ref(self, ref: Ref, update_values: dict):
+        self.sqlite.update(ref, update_values)
