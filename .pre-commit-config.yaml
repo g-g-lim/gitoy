@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ty-type-check
+        name: ty type checking
+        entry: uvx ty check
+        language: system
+        files: \.py$
+        pass_filenames: false
+        args: [.] 

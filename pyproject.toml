@@ -9,5 +9,10 @@ dependencies = [
     "fire>=0.7.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=3.0.0",
+]
+
 [project.scripts]
 gitoy = "cli:main"

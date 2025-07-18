@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from database.database import Database
-from util.constant import GITOY_DB_FILE, GITOY_DIR, GitoyMessage
+from util.constant import GITOY_DB_FILE, GITOY_DIR
 
 
 class Repository:

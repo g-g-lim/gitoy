@@ -8,7 +8,6 @@ import sys
 
 from repository import Repository
 from command.init import Init
-from worktree import Worktree
 from database.database import Database
 from database.sqlite import SQLite
 from util.console import Console
@@ -46,7 +45,6 @@ def main():
     database = Database(sqlite)
     
     repository = Repository(database)
-    worktree = Worktree()
     console = Console()
     command_list = [Init(repository, console)]
 
