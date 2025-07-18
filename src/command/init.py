@@ -13,5 +13,9 @@ class Init:
         self.console = console
 
     def __call__(self):
-        self.repository.init()
-        self.console.info(GitoyMessage.REPOSITORY_INITIALIZED)
+        is_initialized = self.repository.is_initialized()
+        if is_initialized:
+            self.console.info(GitoyMessage.REPOSITORY_ALREADY_INITIALIZED)
+        else:
+            self.repository.init()
+            self.console.info(GitoyMessage.REPOSITORY_INITIALIZED)

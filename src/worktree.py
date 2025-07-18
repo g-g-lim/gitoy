@@ -1,5 +1,5 @@
 
 
 class Worktree:
-    def __init__(self, path: str):
-        self.path = path
+    def __init__(self):
+        pass

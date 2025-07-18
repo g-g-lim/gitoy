@@ -13,9 +13,7 @@ class Database:
 
     def __init__(self, sqlite: SQLite):
         self.sqlite = sqlite
-
-    def init(self):
-        entity_list = [
+        self.entity_list = [
             Blob,
             Commit,
             Ref,
@@ -26,5 +24,10 @@ class Database:
             IndexEntry,
         ]
 
-        for entity in entity_list:
+    def is_initialized(self):
+        return self.sqlite.gitoy_db_path.exists() and len(self.sqlite.list_tables()) == len(self.entity_list)
+
+
+    def init(self):
+        for entity in self.entity_list:
             self.sqlite.create_table(entity.table_name(), entity.columns())

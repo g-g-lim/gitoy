@@ -46,7 +46,7 @@ def main():
     database = Database(sqlite)
     
     repository = Repository(database)
-    worktree = Worktree(".")
+    worktree = Worktree()
     console = Console()
     command_list = [Init(repository, console)]
 
