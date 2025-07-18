@@ -7,8 +7,20 @@ class Console:
     def __init__(self):
         pass
 
-    def info(self, message: GitoyMessage):
-            print(message.value)
+    def info(self, message: GitoyMessage | str):
+        self.log(message, "white")
 
-    def error(self, message: GitoyMessage):
-        print(colored(message.value, "red"))
+    def success(self, message: GitoyMessage | str):
+        self.log(message, "green")
+
+    def warning(self, message: GitoyMessage | str):
+        self.log(message, "yellow")
+
+    def error(self, message: GitoyMessage | str):
+        self.log(message, "red")
+
+    def log(self, message: GitoyMessage | str, color: str = "white"):
+        if isinstance(message, GitoyMessage):
+            print(colored(message.value, color))
+        else:
+            print(colored(message, color))

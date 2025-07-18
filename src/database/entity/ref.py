@@ -26,7 +26,15 @@ class Ref(Entity):
     updated_at: datetime
     target_object_id: Optional[str] = None
     symbolic_target: Optional[str] = None
-    namespace: Optional[str] = None 
+    namespace: Optional[str] = None
+
+    @property
+    def is_remote(self):
+        return self.ref_name.startswith("refs/remotes/")
+
+    @property
+    def branch_name(self):
+        return self.ref_name.split("/")[-1]
     
     @staticmethod
     def table_name():

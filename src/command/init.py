@@ -18,4 +18,4 @@ class Init:
             self.console.info(GitoyMessage.REPOSITORY_ALREADY_INITIALIZED)
         else:
             self.repository.init()
-            self.console.info(GitoyMessage.REPOSITORY_INITIALIZED)
+            self.console.success(GitoyMessage.REPOSITORY_INITIALIZED)

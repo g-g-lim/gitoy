@@ -19,5 +19,5 @@ class Repository:
         self.db.init()
         self.db.create_main_branch()
 
-    def add(self, file: str):
-        pass
+    def list_branches(self):
+        return self.db.list_branches()

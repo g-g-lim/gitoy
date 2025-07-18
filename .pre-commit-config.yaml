@@ -10,15 +10,8 @@ repos:
         args: [.]
       - id: ruff
         name: ruff
-        entry: /Users/imgabgi/.local/bin/uvx ruff check
+        entry: ./scripts/run-ruff.sh
         language: system 
         files: \.py$
         pass_filenames: false
         args: [.]
-
-# Alternative configurations (uncomment if needed)
-# For absolute paths:
-# entry: /Users/imgabgi/.local/bin/uvx ty check
-# 
-# For PATH export:
-# entry: bash -c 'export PATH="$HOME/.local/bin:$PATH" && uvx ty check .'

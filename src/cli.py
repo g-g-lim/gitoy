@@ -10,6 +10,7 @@ from repository import Repository
 from command.init import Init
 from database.database import Database
 from database.sqlite import SQLite
+from command.branch import Branch
 from util.console import Console
 
 
@@ -23,6 +24,7 @@ class GitoyCLI:
     - version: Show version information
     - init: Initialize a new Gitoy repository
     - add: Add a file to the Gitoy repository index
+    - branch: List, create, or delete branches
     """
     
     def __init__(self, commands = []):
@@ -46,7 +48,7 @@ def main():
     
     repository = Repository(database)
     console = Console()
-    command_list = [Init(repository, console)]
+    command_list = [Init(repository, console), Branch(repository, console)]
 
     fire.Fire(GitoyCLI(command_list))
 

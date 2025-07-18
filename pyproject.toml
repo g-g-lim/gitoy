@@ -16,3 +16,6 @@ dev = [
 
 [project.scripts]
 gitoy = "cli:main"
+
+[tool.ty.rules]
+missing-argument = "warn"

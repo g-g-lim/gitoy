@@ -34,3 +34,9 @@ class SQLite:
         sql = f"INSERT INTO {entity.table_name()} ({', '.join(columns)}) VALUES ({placeholders})"
         self.cursor.execute(sql, values)
         self.conn.commit()
+
+    def select(self, sql: str) -> list[dict]:
+        self.cursor.execute(sql)
+        columns = [desc[0] for desc in self.cursor.description]
+        rows = self.cursor.fetchall()
+        return [dict(zip(columns, row)) for row in rows]
