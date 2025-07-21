@@ -1,15 +1,15 @@
-from util.file_handler import FileHandler
+from util.repository_file import RepositoryFile
 from database.database import Database
 from util.result import Result
 
 
 class Repository:
-    def __init__(self, database: Database, file_handler: FileHandler):
+    def __init__(self, database: Database, repository_file: RepositoryFile):
         self.db = database
-        self.file_handler = file_handler
+        self.file_handler = repository_file
 
     def is_initialized(self):
-        return self.file_handler.repo_dir is not None and self.db.is_initialized()
+        return self.file_handler.repo_dir_path.exists() and self.db.is_initialized()
 
     def init(self):
         repo_dir = self.file_handler.create_repo_dir()

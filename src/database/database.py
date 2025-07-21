@@ -26,14 +26,14 @@ class Database:
             IndexEntry,
         ]
 
-    def is_initialized(self):
-        return self.sqlite.gitoy_db_path is not None and len(self.sqlite.list_tables()) == len(self.entity_list)
+    def is_initialized(self) -> bool:
+        return self.sqlite.path.exists() and len(self.sqlite.list_tables()) == len(self.entity_list)
 
-    def init(self):
+    def init(self) -> None:
         for entity in self.entity_list:
             self.sqlite.create_table(entity.table_name(), entity.columns())
 
-    def create_main_branch(self):
+    def create_main_branch(self) -> Ref:
         ref = Ref(
             ref_name="refs/heads/main",
             ref_type="branch",
@@ -45,12 +45,13 @@ class Database:
             namespace=None,
         )
         self.sqlite.insert(ref)
+        return ref
 
     def list_branches(self) -> list[Ref]:
         refs = self.sqlite.select(f"SELECT * FROM {Ref.table_name()} WHERE ref_type = 'branch'")
         return [Ref(**ref) for ref in refs]
 
-    def create_branch(self, branch_name: str, target_object_id: str | None = None):
+    def create_branch(self, branch_name: str, target_object_id: Optional[str] = None) -> Ref:
         ref = Ref(
             ref_name=f"refs/heads/{branch_name}",
             ref_type="branch",
@@ -68,12 +69,13 @@ class Database:
         refs = self.sqlite.select(f"SELECT * FROM {Ref.table_name()} WHERE head = 1 AND ref_type = 'branch'")
         return Ref(**refs[0])
     
-    def update_ref(self, ref: Ref, update_values: dict):
+    def update_ref(self, ref: Ref, update_values: dict) -> Ref:
         self.sqlite.update(ref, update_values)
+        return ref
 
     def get_branch(self, name: str) -> Optional[Ref]:
         refs = self.sqlite.select(f"SELECT * FROM {Ref.table_name()} WHERE ref_name = '{name}' AND ref_type = 'branch'")
         return Ref(**refs[0]) if refs else None
 
-    def delete_branch(self, branch: Ref):
-        self.sqlite.delete(branch)  
+    def delete_branch(self, branch: Ref) -> None:
+        self.sqlite.delete(branch)

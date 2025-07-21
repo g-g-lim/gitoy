@@ -11,7 +11,7 @@ from command.init import Init
 from database.database import Database
 from database.sqlite import SQLite
 from command.branch import Branch
-from util.file_handler import FileHandler
+from util.repository_file import RepositoryFile
 from util.console import Console
 
 
@@ -24,13 +24,23 @@ class GitoyCLI:
     Commands:
     - version: Show version information
     - init: Initialize a new Gitoy repository
-    - add: Add a file to the Gitoy repository index
     - branch: List, create, or delete branches
+    - add: Add a file to the Gitoy repository index
     """
     
-    def __init__(self, commands = []):
+    def __init__(self):
         """Initialize Gitoy CLI"""
-        for command in commands:
+
+        _repository_file = RepositoryFile()
+        _sqlite = SQLite(_repository_file.create_repo_db_path())
+        _database = Database(_sqlite)
+        _repository = Repository(_database, _repository_file)
+        _console = Console()
+        _command_list = [
+            Init(_repository, _console), Branch(_repository, _console)
+        ]
+
+        for command in _command_list:
             setattr(self, command.__class__.__name__.lower(), command)
     
     def version(self):
@@ -44,16 +54,8 @@ class GitoyCLI:
 
 def main():
     """Main entry point for Gitoy CLI"""
-    file_handler = FileHandler()
-    
-    sqlite = SQLite(file_handler)
-    database = Database(sqlite)
-    
-    repository = Repository(database, file_handler)
-    console = Console()
-    command_list = [Init(repository, console), Branch(repository, console)]
-
-    fire.Fire(GitoyCLI(command_list))
+    app = GitoyCLI()
+    fire.Fire(app)
 
 if __name__ == "__main__":
     main() 
