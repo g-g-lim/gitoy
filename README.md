@@ -41,10 +41,10 @@ The project uses pytest for testing with comprehensive test coverage:
 
 ```bash
 # Run all tests
-uv run pytest
+uvx pytest
 
 # Run with verbose output
-uv run pytest --verbose
+uvx pytest --verbose
 
 ### Type Checking
 
