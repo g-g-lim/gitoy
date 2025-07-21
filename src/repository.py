@@ -24,7 +24,7 @@ class Repository:
         return self.db.get_head_branch()
 
     # TODO: commit hash 를 참조하는 브랜치 생성하는 경우 처리
-    def create_branch(self, name: str, commit_hash: str):
+    def create_branch(self, name: str, commit_hash: str | None = None):
         head_branch = self.get_head_branch()
         create_ref_name = f"refs/heads/{name}"
 

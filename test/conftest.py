@@ -31,9 +31,13 @@ def file_handler():
     file_handler.repo_dir.rmdir()
 
 
+@pytest.fixture(scope="session")
+def sqlite(file_handler):
+    return SQLite(file_handler)
+
+
 @pytest.fixture(scope="session")  
-def database(file_handler):
-    sqlite = SQLite(file_handler)
+def database(sqlite):
     database = Database(sqlite)
     return database
 
