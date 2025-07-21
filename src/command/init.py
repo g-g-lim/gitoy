@@ -5,7 +5,8 @@ from util.constant import INITIALIZED_MESSAGE, REPOSITORY_ALREADY_INITIALIZED
 
 class Init:
     """
-    Initialize a new Gitoy repository
+    gitoy-init - Create an empty Git repository
+       or reinitialize an existing one
     """
 
     def __init__(self, repository: Repository, console: Console):

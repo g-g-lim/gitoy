@@ -11,6 +11,8 @@ from command.init import Init
 from database.database import Database
 from database.sqlite import SQLite
 from command.branch import Branch
+from command.add import Add
+from worktree import Worktree
 from util.repository_file import RepositoryFile
 from util.console import Console
 
@@ -34,10 +36,13 @@ class GitoyCLI:
         _repository_file = RepositoryFile()
         _sqlite = SQLite(_repository_file.create_repo_db_path())
         _database = Database(_sqlite)
-        _repository = Repository(_database, _repository_file)
+        _worktree = Worktree(_repository_file)
+        _repository = Repository(_database, _repository_file, _worktree)
         _console = Console()
         _command_list = [
-            Init(_repository, _console), Branch(_repository, _console)
+            Init(_repository, _console), 
+            Branch(_repository, _console),
+            Add(_repository, _console)
         ]
 
         for command in _command_list:

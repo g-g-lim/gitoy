@@ -1,12 +1,14 @@
 from util.repository_file import RepositoryFile
 from database.database import Database
 from util.result import Result
+from worktree import Worktree
 
 
 class Repository:
-    def __init__(self, database: Database, repository_file: RepositoryFile):
+    def __init__(self, database: Database, repository_file: RepositoryFile, worktree: Worktree):
         self.db = database
         self.file_handler = repository_file
+        self.worktree = worktree
 
     def is_initialized(self):
         return self.file_handler.repo_dir_path.exists() and self.db.is_initialized()
@@ -61,3 +63,16 @@ class Repository:
             return Result.Fail(f"Branch {ref_name} is the head branch")
         self.db.delete_branch(branch)
         return Result.Ok(None)
+
+    def hash_object(self, file_path: str):
+        pass
+
+    def compress_file(self, file_path: str):
+        pass
+
+    def add_to_index(self, add_paths: list[str]):
+        found_file_paths = []
+        for path in add_paths:
+            found_paths = self.worktree.find_paths(path)
+            found_file_paths.extend(found_paths)
+        return found_file_paths

@@ -4,8 +4,10 @@ Pytest configuration and shared fixtures for Repository testing.
 import pytest
 from pathlib import Path
 import sys
+import tempfile
 
 from database.sqlite import SQLite
+from worktree import Worktree
 from util.repository_file import RepositoryFile
 from database.database import Database
 from repository import Repository
@@ -41,5 +43,24 @@ def database(sqlite):
 
 
 @pytest.fixture(scope="session")
-def repository(database, repository_file):
-    return Repository(database, repository_file)
+def worktree(repository_file):
+    return Worktree(repository_file)
+
+
+@pytest.fixture(scope="session")
+def repository(database, repository_file, worktree):
+    return Repository(database, repository_file, worktree)
+
+
+@pytest.fixture()
+def temp_file(repository_file):
+    # Create a temporary file
+    fd, path = tempfile.mkstemp(dir=repository_file.repo_dir_path.parent)
+    path = Path(path)
+    path.write_text("test")
+
+    yield path.name
+
+    # Teardown: remove the file if it exists
+    if path.exists():
+        path.unlink()
