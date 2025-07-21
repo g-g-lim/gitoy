@@ -7,8 +7,8 @@ from util.constant import GITOY_DB_FILE, GITOY_DIR
 
 class RepositoryFile:
 
-    def __init__(self):
-        self.cwd = Path(os.getcwd())
+    def __init__(self, cwd: Optional[Path] = None):
+        self.cwd = cwd or Path(os.getcwd())
         self.repo_dir_path = Path(self.cwd, GITOY_DIR)
 
     def get_repo_dir(self) -> Optional[Path]:

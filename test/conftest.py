@@ -18,7 +18,7 @@ if str(src_path) not in sys.path:
 
 @pytest.fixture(scope="session")
 def repository_file():
-    repository_file = RepositoryFile() 
+    repository_file = RepositoryFile(Path(__file__).parent) 
     
     yield repository_file
 
