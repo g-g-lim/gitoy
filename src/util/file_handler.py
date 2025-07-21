@@ -36,4 +36,6 @@ class FileHandler:
     def create_repo_dir(self):
         path = Path(self.cwd, GITOY_DIR)
         path.mkdir(parents=True, exist_ok=True)
+        self.repo_dir = path
+        self.repo_db_file = self.get_repo_db_file()
         return path

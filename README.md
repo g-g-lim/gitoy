@@ -1,6 +1,22 @@
 # gitoy
 
-A simple File Version Control CLI tool built with Python.
+A simple Git-like File Version Control CLI tool built with Python. gitoy implements core version control functionalities including repository initialization, branch management, and file tracking with SQLite-based storage.
+
+## Features
+
+Based on current implementation:
+
+- **Repository Management**: Initialize and manage local repositories with file system and database integration
+- **Branch Operations**: Create, list, and manage branches with HEAD tracking
+- **Database Storage**: SQLite-based persistent storage for version control metadata
+- **Entity Management**: Structured handling of commits, refs, trees, and blobs
+
+## Architecture
+
+- `Repository`: Core repository management and operations
+- `Database`: SQLite-based persistence layer with entity mapping
+- `FileHandler`: File system operations and repository structure management
+- `CLI`: Command-line interface using Fire framework
 
 ## Development Setup
 
@@ -16,6 +32,19 @@ A simple File Version Control CLI tool built with Python.
    ```bash
    uv sync --extra dev
    ```
+
+## Testing
+
+### Running Tests
+
+The project uses pytest for testing with comprehensive test coverage:
+
+```bash
+# Run all tests
+uv run pytest
+
+# Run with verbose output
+uv run pytest --verbose
 
 ### Type Checking
 
@@ -59,5 +88,12 @@ If you encounter issues with VSCode not finding `uvx` when committing:
 ## Usage
 
 ```bash
-uv run python -m src.cli --help
+# Run the CLI
+uv run gitoy --help
+
+# Initialize a repository
+uv run gitoy init
+
+# List branches  
+uv run gitoy branch
 ```
