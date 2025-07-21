@@ -23,7 +23,8 @@ class Repository:
     def get_head_branch(self):
         return self.db.get_head_branch()
 
-    def create_branch(self, name: str):
+    # TODO: commit hash 를 참조하는 브랜치 생성하는 경우 처리
+    def create_branch(self, name: str, commit_hash: str):
         head_branch = self.get_head_branch()
         create_ref_name = f"refs/heads/{name}"
 
@@ -50,6 +51,7 @@ class Repository:
         head_branch.ref_name = create_ref_name
         return Result.Ok(head_branch)
 
+    # TODO: 브랜치 삭제 시 참조되지 않는 커밋 삭제 처리
     def delete_branch(self, name: str):
         ref_name = f"refs/heads/{name}"
         branch = self.db.get_branch(ref_name)

@@ -20,8 +20,8 @@ class Branch:
             else:
                 self.console.info(branch.branch_name)
 
-    def create(self, name: str):
-        result = self.repository.create_branch(name)
+    def create(self, name: str, commit_hash: str):
+        result = self.repository.create_branch(name, commit_hash)
         if result.success:
             if result.value['new']:
                 self.console.success(f'Branch refs/heads/{name} created')
