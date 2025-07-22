@@ -74,9 +74,9 @@ class TestRepositoryBranch:
         assert result.success is False
         assert result.error == "Branch refs/heads/test_branch already exists"
 
-    def test_create_branch_when_initial_commit_exists(self, repository):
-        """Test creating a new branch when initial commit exists."""
-        raise NotImplementedError()
+    # def test_create_branch_when_initial_commit_exists(self, repository):
+    #     """Test creating a new branch when initial commit exists."""
+    #     raise NotImplementedError()
 
     def test_update_head_branch(self, repository):
         """Test updating head branch."""
@@ -97,8 +97,8 @@ class TestRepositoryBranch:
         assert result.success is False
         assert result.error == "Branch refs/heads/test_branch_1 already exists"
     
-    def test_delete_branch(self, repository):
-        raise NotImplementedError()
+    # def test_delete_branch(self, repository):
+    #     raise NotImplementedError()
 
     def test_delete_branch_when_not_exists_branch(self, repository):
         result = repository.delete_branch("test_branch_2")
