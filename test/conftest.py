@@ -52,7 +52,20 @@ def repository(database, repository_file, worktree):
     return Repository(database, repository_file, worktree)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
+def temp_directory(repository_file):
+    directory = repository_file.repo_dir_path / "test_directory"
+    directory.mkdir(parents=True, exist_ok=True)
+
+    yield Path(directory)
+
+    for item in directory.iterdir():
+        if item.is_file():
+            item.unlink()
+    directory.rmdir()
+
+
+@pytest.fixture(scope="session")
 def temp_file(repository_file):
     # Create a temporary file
     fd, path = tempfile.mkstemp(dir=repository_file.repo_dir_path.parent)

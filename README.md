@@ -46,6 +46,9 @@ uvx pytest
 # Run with verbose output
 uvx pytest --verbose
 
+# Run with specific test case
+uvx pytest test/test_repository.py::TestRepositoryInit::test_init_repository
+
 ### Type Checking
 
 This project uses `uvx ty` for type checking. The type checker runs automatically before each commit via pre-commit hooks.

@@ -8,7 +8,7 @@ class Worktree:
 
     def find_paths(self, file_path: str) -> list[Path]:
         result_paths: list[Path] = []
-        if file_path in (".", "./"):
+        if file_path in (".", "./"):            
             result_paths = list(self.root_dir_path.rglob("*"))
         elif file_path in ("..", "../"):
             parent_dir = self.root_dir_path.parent
