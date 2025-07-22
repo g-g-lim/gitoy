@@ -27,7 +27,7 @@ class Database:
         ]
 
     def is_initialized(self) -> bool:
-        return self.sqlite.path.exists() and len(self.sqlite.list_tables()) == len(self.entity_list)
+        return self.sqlite.path is not None and self.sqlite.path.exists() and len(self.sqlite.list_tables()) == len(self.entity_list)
 
     def init(self) -> None:
         for entity in self.entity_list:

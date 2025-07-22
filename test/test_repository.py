@@ -16,22 +16,22 @@ if str(src_path) not in sys.path:
 class TestRepositoryInit:
     """Test cases for Repository class."""
 
-    def test_init_repository(self, repository, repository_file):
+    def test_init_repository(self, repository):
         """Test repository initialization check when both file system and database are initialized."""
         repository.init()
         result = repository.is_initialized()
         
         assert result is True
-        assert repository_file.repo_dir_path.exists()
-        assert repository_file.get_repo_db_path().exists()  
+        assert repository.path.repo_dir.exists()
+        assert repository.path.get_repo_db_path().exists()  
 
     def test_init_repository_with_existing_repo(self, repository):
         """Test repository initialization check when both file system and database are initialized."""
         result = repository.is_initialized()
         
         assert result is True
-        assert repository.file_handler.repo_dir_path.exists()
-        assert repository.file_handler.get_repo_db_path().exists()  
+        assert repository.path.repo_dir.exists()
+        assert repository.path.get_repo_db_path().exists()  
 
 
 class TestRepositoryBranch:

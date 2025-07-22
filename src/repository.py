@@ -1,20 +1,20 @@
-from util.repository_file import RepositoryFile
+from repository_path import RepositoryPath
 from database.database import Database
 from util.result import Result
 from worktree import Worktree
 
 
 class Repository:
-    def __init__(self, database: Database, repository_file: RepositoryFile, worktree: Worktree):
+    def __init__(self, database: Database, repository_path: RepositoryPath, worktree: Worktree):
         self.db = database
-        self.file_handler = repository_file
+        self.path = repository_path
         self.worktree = worktree
 
     def is_initialized(self):
-        return self.file_handler.repo_dir_path.exists() and self.db.is_initialized()
+        return self.path.get_repo_dir() is not None and self.db.is_initialized()
 
     def init(self):
-        repo_dir = self.file_handler.create_repo_dir()
+        repo_dir = self.path.create_repo_dir()
         self.db.init()
         self.db.create_main_branch()
         return repo_dir

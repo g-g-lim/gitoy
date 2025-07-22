@@ -7,12 +7,15 @@ from database.entity.entity import Entity
 
 class SQLite:
 
-    def __init__(self, path: Path):
-        self.path = path
+    def __init__(self, path: Path | None = None):
+        self.path = path    
         self.conn: Optional[sqlite3.Connection] = None
         self.cursor: Optional[sqlite3.Cursor] = None
 
     def connect(self):
+        if self.path is None:
+            raise ValueError("Path is not set")
+        
         self.conn = sqlite3.connect(self.path.absolute())
         self.cursor = self.conn.cursor()
         self.conn.execute("PRAGMA journal_mode = WAL")

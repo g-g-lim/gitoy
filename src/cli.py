@@ -13,7 +13,7 @@ from database.sqlite import SQLite
 from command.branch import Branch
 from command.add import Add
 from worktree import Worktree
-from util.repository_file import RepositoryFile
+from repository_path import RepositoryPath
 from util.console import Console
 
 
@@ -33,11 +33,14 @@ class GitoyCLI:
     def __init__(self):
         """Initialize Gitoy CLI"""
 
-        _repository_file = RepositoryFile()
-        _sqlite = SQLite(_repository_file.create_repo_db_path())
+        _repository_path = RepositoryPath()
+        if _repository_path.repo_dir is None:
+            _sqlite = SQLite(_repository_path.create_repo_db_path())
+        else:
+            _sqlite = SQLite(_repository_path.get_repo_db_path())
         _database = Database(_sqlite)
-        _worktree = Worktree(_repository_file)
-        _repository = Repository(_database, _repository_file, _worktree)
+        _worktree = Worktree(_repository_path)
+        _repository = Repository(_database, _repository_path, _worktree)
         _console = Console()
         _command_list = [
             Init(_repository, _console), 

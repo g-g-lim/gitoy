@@ -1,16 +1,17 @@
 """
 Pytest configuration and shared fixtures for Repository testing.
 """
+import shutil
 import pytest
 from pathlib import Path
 import sys
 import tempfile
 
-from database.sqlite import SQLite
-from worktree import Worktree
-from util.repository_file import RepositoryFile
-from database.database import Database
-from repository import Repository
+from src.database.sqlite import SQLite
+from src.worktree import Worktree
+from src.repository_path import RepositoryPath
+from src.database.database import Database
+from src.repository import Repository
 
 
 src_path = Path(__file__).parent.parent / "src"
@@ -19,21 +20,19 @@ if str(src_path) not in sys.path:
 
 
 @pytest.fixture(scope="session")
-def repository_file():
-    repository_file = RepositoryFile(Path(__file__).parent) 
+def repository_path():
+    test_directory = Path(__file__).parent
+    repository_path = RepositoryPath(test_directory)
     
-    yield repository_file
-
-    # teardown
-    for item in repository_file.repo_dir_path.iterdir():
-        if item.is_file():
-           item.unlink()
-    repository_file.repo_dir_path.rmdir()
+    yield repository_path
+    
+    if repository_path.repo_dir is not None:
+        shutil.rmtree(repository_path.repo_dir)
 
 
 @pytest.fixture(scope="session")
-def sqlite(repository_file):
-    return SQLite(repository_file.create_repo_db_path())
+def sqlite(repository_path):
+    return SQLite(repository_path.create_repo_db_path())
 
 
 @pytest.fixture(scope="session")  
@@ -43,32 +42,30 @@ def database(sqlite):
 
 
 @pytest.fixture(scope="session")
-def worktree(repository_file):
-    return Worktree(repository_file)
+def worktree(repository_path):
+    return Worktree(repository_path)
 
 
 @pytest.fixture(scope="session")
-def repository(database, repository_file, worktree):
-    return Repository(database, repository_file, worktree)
+def repository(database, repository_path, worktree):
+    return Repository(database, repository_path, worktree)
 
 
-@pytest.fixture(scope="session")
-def temp_directory(repository_file):
-    directory = repository_file.repo_dir_path / "test_directory"
+@pytest.fixture(scope="function")
+def temp_directory(repository_path):
+    directory = repository_path.repo_dir.parent / "test_directory"
     directory.mkdir(parents=True, exist_ok=True)
 
-    yield Path(directory)
+    yield directory
 
-    for item in directory.iterdir():
-        if item.is_file():
-            item.unlink()
-    directory.rmdir()
+    # Remove all files and directories under 'directory'
+    shutil.rmtree(directory)
 
 
-@pytest.fixture(scope="session")
-def temp_file(repository_file):
+@pytest.fixture(scope="function")
+def temp_file(repository_path):
     # Create a temporary file
-    fd, path = tempfile.mkstemp(dir=repository_file.repo_dir_path.parent)
+    fd, path = tempfile.mkstemp(dir=repository_path.repo_dir.parent)
     path = Path(path)
     path.write_text("test")
 
