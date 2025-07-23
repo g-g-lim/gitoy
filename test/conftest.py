@@ -19,6 +19,36 @@ if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
 
+@pytest.fixture(scope="session")
+def repository_path(test_root_directory):
+    repository_path = RepositoryPath(test_root_directory)
+    
+    yield repository_path
+    
+    if repository_path.repo_dir is not None:
+        shutil.rmtree(repository_path.repo_dir)
+
+
+@pytest.fixture(scope="session")
+def sqlite(repository_path):
+    return SQLite(repository_path.create_repo_db_path())
+
+
+@pytest.fixture(scope="session")  
+def database(sqlite):
+    database = Database(sqlite)
+    return database
+
+
+@pytest.fixture(scope="session")
+def worktree(repository_path):
+    return Worktree(repository_path)
+
+
+@pytest.fixture(scope="session")
+def repository(database, repository_path, worktree):
+    return Repository(database, repository_path, worktree)
+
 
 @pytest.fixture(scope="session")
 def test_root_directory():
@@ -59,33 +89,32 @@ def test_file(test_directory):
     if path.exists():
         path.unlink()
 
-
-@pytest.fixture(scope="session")
-def repository_path(test_root_directory):
-    repository_path = RepositoryPath(test_root_directory)
     
-    yield repository_path
-    
-    if repository_path.repo_dir is not None:
-        shutil.rmtree(repository_path.repo_dir)
+@pytest.fixture(scope="function")
+def test_large_file(test_directory):
+    _, path = tempfile.mkstemp(dir=test_directory)
+    path = Path(path)
+    path.write_bytes(b"a" * 512 * 1024 * 1024)
+    yield path
+    if path.exists():
+        path.unlink()
 
 
-@pytest.fixture(scope="session")
-def sqlite(repository_path):
-    return SQLite(repository_path.create_repo_db_path())
+@pytest.fixture(scope="function")
+def test_image_file(test_directory):
+    image_file = test_directory / "test.png"
+    image_file.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR"
+        b"\x00\x00\x00\x01"  # width: 1
+        b"\x00\x00\x00\x01"  # height: 1
+        b"\x08\x06\x00\x00\x00"  # bit depth, color type, compression, filter, interlace
+        b"\x1f\x15\xc4\x89" 
+        b"\x00\x00\x00\x0bIDAT"
+        b"\x08\xd7c\xf8\x0f\x00\x01\x01\x01\x00\x18\xdd\x8d\x18"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    yield image_file
 
-
-@pytest.fixture(scope="session")  
-def database(sqlite):
-    database = Database(sqlite)
-    return database
-
-
-@pytest.fixture(scope="session")
-def worktree(repository_path):
-    return Worktree(repository_path)
-
-
-@pytest.fixture(scope="session")
-def repository(database, repository_path, worktree):
-    return Repository(database, repository_path, worktree)
+    if image_file.exists():
+        image_file.unlink()

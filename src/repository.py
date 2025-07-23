@@ -67,7 +67,10 @@ class Repository:
         self.db.delete_branch(branch)
         return Result.Ok(None)
 
-    def hash_object(self, path: Path) -> str:
+    def hash_object(self, path: Path) -> Result[str, str]:
+        if not path.exists():
+            return Result.Fail(f"File {path} not found")
+
         stat = path.lstat()
         fsize = stat.st_size
         sha1 = hashlib.sha1()
@@ -75,12 +78,12 @@ class Repository:
         if fsize <= 32 * 1024:
             body = path.read_bytes()
             sha1.update(body)
-            return sha1.hexdigest()
+            return Result.Ok(sha1.hexdigest())
         elif fsize <= 512 * 1024 * 1024:
             with open(path, 'rb') as f:
                 with mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_file:
                     sha1.update(mmap_file)
-            return sha1.hexdigest()
+            return Result.Ok(sha1.hexdigest())
         else:
             raise NotImplementedError("File size is too large")
 
