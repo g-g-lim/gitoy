@@ -7,12 +7,15 @@ import fire
 import sys
 
 from repository import Repository
+from command.init import Init
 from database.database import Database
 from database.sqlite import SQLite
+from command.branch import Branch
+from command.add import Add
 from worktree import Worktree
 from repository_path import RepositoryPath
 from util.console import Console
-from command import Command, Init, Branch, Add
+from command import Command
 import zstandard
 
 class GitoyCLI:
@@ -52,9 +55,9 @@ def main():
         sqlite = SQLite(repository_path.get_repo_db_path())
     database = Database(sqlite)
     worktree = Worktree(repository_path)
-    compression = zstandard.ZstdCompressor()
+    compressor = zstandard.ZstdCompressor()
 
-    repository = Repository(database, repository_path, worktree, compression)
+    repository = Repository(database, repository_path, worktree, compressor)
     console = Console()
     command_list = [
         Init(repository, console), 

@@ -74,7 +74,7 @@ class Repository:
         self.db.delete_branch(branch)
         return Result.Ok(None)
 
-    def hash_object(self, path: Path):
+    def hash_file(self, path: Path):
         if not path.exists():
             return Result.Fail(f"File {path} not found")
 
@@ -111,7 +111,7 @@ class Repository:
             matched_paths.extend(found_paths)
 
         for path in matched_paths:
-            hash = self.hash_object(path)
+            hash = self.hash_file(path)
             print(hash)
 
         return Result.Ok(None)
