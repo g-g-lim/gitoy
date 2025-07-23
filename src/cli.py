@@ -12,6 +12,7 @@ from database.database import Database
 from database.sqlite import SQLite
 from command.branch import Branch
 from command.add import Add
+from hash_algo import Sha1
 from worktree import Worktree
 from repository_path import RepositoryPath
 from util.console import Console
@@ -59,8 +60,8 @@ def main():
     database = Database(sqlite)
     worktree = Worktree(repository_path)
     compressor = zstandard.ZstdCompressor()
-
-    repository = Repository(database, repository_path, worktree, compressor)
+    hash_algo = Sha1()
+    repository = Repository(database, repository_path, worktree, compressor, hash_algo)
     console = Console()
     command_list = [
         Init(repository, console), 

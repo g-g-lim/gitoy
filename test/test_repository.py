@@ -10,6 +10,8 @@ import tempfile
 from unittest.mock import patch
 import sys
 
+from src.database.entity.blob import Blob
+from src.database.sqlite import SQLite
 from src.repository import Repository
 
 # Add src to path
@@ -119,7 +121,7 @@ class TestRepositoryAddToIndex:
     """Test cases for Repository add to index."""
 
     def test_add_to_index_with_not_in_repository(self, repository: Repository):
-        result = repository.add_to_index(["test_file"])
+        result = repository.add_index(["test_file"])
         assert result.success is False
         assert result.error == "Not in a repository"
 
@@ -127,96 +129,84 @@ class TestRepositoryAddToIndex:
         with patch('pathlib.Path.cwd') as mock_cwd:
             mock_cwd.return_value = test_directory
 
-            result = repository.add_to_index(["temp_file"])
+            result = repository.add_index(["temp_file"])
             assert result.success is False
             assert result.error == "Pathspec temp_file did not match any files"
 
-    def test_add_to_index_with_exists_file(self, repository: Repository, test_file: Path):
+    def test_add_to_index_with_exists_file(self, sqlite: SQLite, repository: Repository, test_file: Path):
         with patch('pathlib.Path.cwd') as mock_cwd:
             mock_cwd.return_value = test_file.parent
 
-            result = repository.add_to_index([test_file.name])
+            result = repository.add_index([test_file.name])
 
             assert result.success is True
 
-class TestRepositoryHashObject:
-    """Test cases for Repository hash object."""
+            blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
+            assert len(blobs) == 1
+            assert blobs[0]["object_id"] == repository.hash(test_file.read_bytes())
+
+
+class TestRepositoryHashFile:
+    """Test cases for Repository hash file."""
 
     def test_hash_file_with_normal_file(self, repository: Repository, test_file: Path):
-        result = repository.hash_file(test_file)
+        result = repository.hash(test_file.read_bytes())
 
         sha1 = hashlib.sha1()
         sha1.update(test_file.read_bytes())
 
-        assert result.success is True
-        assert len(result.value) == 40
-        assert result.value == sha1.hexdigest()
+        assert result == sha1.hexdigest()
 
         test_file.write_bytes(b"append_data")
-        result = repository.hash_file(test_file)
+        result = repository.hash(test_file.read_bytes())
 
         sha2= hashlib.sha1()
         sha2.update(test_file.read_bytes())
 
-        assert result.success is True
-        assert len(result.value) == 40
-        assert result.value == sha2.hexdigest()
+        assert result == sha2.hexdigest()
         assert sha1.hexdigest() != sha2.hexdigest()
 
     def test_hash_file_with_empty_file(self, repository: Repository):
         _, path = tempfile.mkstemp()
         empty_file = Path(path)
-        result = repository.hash_file(empty_file)
+        result = repository.hash(empty_file.read_bytes())
 
         sha1 = hashlib.sha1()
         sha1.update(b"")
 
-        assert result.success is True
-        assert len(result.value) == 40
-        assert result.value == sha1.hexdigest()
+        assert result == sha1.hexdigest()
 
     def test_hash_file_with_same_content_but_different_path(self, repository: Repository, test_file: Path):
         _, path = tempfile.mkstemp()
         test_file2 = Path(path)
         test_file2.write_bytes(test_file.read_bytes())
 
-        assert repository.hash_file(test_file).value == repository.hash_file(test_file2).value
+        assert repository.hash(test_file.read_bytes()) == repository.hash(test_file2.read_bytes())
     
     def test_hash_file_with_large_file(self, repository: Repository, test_large_file: Path):
-        result = repository.hash_file(test_large_file)
+        result = repository.hash(test_large_file.read_bytes())
 
         sha1 = hashlib.sha1()
         sha1.update(test_large_file.read_bytes())
 
-        assert result.success is True
-        assert len(result.value) == 40
-        assert result.value == sha1.hexdigest()
+        assert result == sha1.hexdigest()
 
     def test_hash_file_with_binary_file(self, repository: Repository):
         fd, path = tempfile.mkstemp()
         binary_file = Path(path)
         binary_file.write_bytes(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F")
-        result = repository.hash_file(binary_file)
+        result = repository.hash(binary_file.read_bytes())
 
         sha1 = hashlib.sha1()
         sha1.update(binary_file.read_bytes())
 
-        assert result.success is True
-        assert len(result.value) == 40
-        assert result.value == sha1.hexdigest()
-
-    def test_hash_file_with_not_exists_file(self, repository: Repository):
-        result = repository.hash_file(Path("not_exists_file"))
-        assert result.success is False
-        assert result.error == "File not_exists_file not found"
+        assert result == sha1.hexdigest()
 
     def test_hash_file_with_image_file(self, repository: Repository, test_image_file: Path):
-        result = repository.hash_file(test_image_file)
+        result = repository.hash(test_image_file.read_bytes())
 
         sha1 = hashlib.sha1()
         sha1.update(test_image_file.read_bytes())
 
-        assert result.success is True
-        assert len(result.value) == 40
-        assert result.value == sha1.hexdigest()
+        assert result == sha1.hexdigest()
         

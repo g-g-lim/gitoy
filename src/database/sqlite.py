@@ -48,6 +48,28 @@ class SQLite:
         cursor.execute(sql, values)
         conn.commit()
 
+    def insert_many(self, entities: list[Entity]):
+        if not entities:
+            return
+            
+        conn, cursor = self.get_connection()
+        
+        # Use the first entity to get table and column information
+        first_entity = entities[0]
+        table_name = first_entity.table_name()
+        columns = list(first_entity.__dataclass_fields__.keys())
+        placeholders = ", ".join(["?"] * len(columns))
+        sql = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({placeholders})"
+        
+        # Prepare values for all entities
+        values_list = [
+            [getattr(entity, col) for col in columns]
+            for entity in entities
+        ]
+        
+        cursor.executemany(sql, values_list)
+        conn.commit()
+
     def select(self, query: str) -> list[dict]:
         conn, cursor = self.get_connection()
         cursor.execute(query)

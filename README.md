@@ -1,22 +1,33 @@
 # gitoy
 
-A simple Git-like File Version Control CLI tool built with Python. gitoy implements core version control functionalities including repository initialization, branch management, and file tracking with SQLite-based storage.
+A simple Git-like File Version Control CLI tool built with Python. gitoy implements core version control functionalities including repository initialization, branch management, file tracking, and compression with SQLite-based storage.
 
 ## Features
 
-Based on current implementation:
-
 - **Repository Management**: Initialize and manage local repositories with file system and database integration
 - **Branch Operations**: Create, list, and manage branches with HEAD tracking
+- **File Operations**: Add files to the index with hash-based content tracking
 - **Database Storage**: SQLite-based persistent storage for version control metadata
-- **Entity Management**: Structured handling of commits, refs, trees, and blobs
+- **Compression**: Zstandard compression for efficient storage
+- **Entity Management**: Structured handling of commits, refs, trees, blobs, and index entries
+
+## Commands
+
+- `gitoy init`: Initialize a new Gitoy repository
+- `gitoy branch`: List, create, or delete branches
+- `gitoy add <files>`: Add file contents to the index
+- `gitoy version`: Show version information
 
 ## Architecture
 
-- `Repository`: Core repository management and operations
-- `Database`: SQLite-based persistence layer with entity mapping
-- `FileHandler`: File system operations and repository structure management
-- `CLI`: Command-line interface using Fire framework
+The project is organized into modular components:
+
+- **CLI Layer**: `GitoyCLI` class with Fire framework integration
+- **Commands**: Modular command implementations (`Init`, `Branch`, `Add`)
+- **Repository**: Core repository operations and file management
+- **Database**: SQLite-based persistence with entity mapping
+- **Worktree**: File system operations and repository structure management
+- **Utilities**: Console output, result handling, and custom types
 
 ## Development Setup
 
@@ -91,12 +102,18 @@ If you encounter issues with VSCode not finding `uvx` when committing:
 ## Usage
 
 ```bash
-# Run the CLI
+# Show help and available commands
 uv run gitoy --help
+
+# Show version information
+uv run gitoy version
 
 # Initialize a repository
 uv run gitoy init
 
 # List branches  
 uv run gitoy branch
+
+# Add files to the index
+uv run gitoy add file1.txt file2.txt
 ```

@@ -1,11 +1,14 @@
-import hashlib
+from datetime import datetime
 from pathlib import Path
 from repository_path import RepositoryPath
 from database.database import Database
+from database.entity.blob import Blob
 from util.result import Result
 from worktree import Worktree
+from custom_types import ReadableBuffer
 import zstandard
 import mmap
+from hash_algo import HashAlgo
 
 class Repository:
     
@@ -13,12 +16,14 @@ class Repository:
         database: Database, 
         repository_path: RepositoryPath, 
         worktree: Worktree, 
-        compression: zstandard.ZstdCompressor
+        compression: zstandard.ZstdCompressor,
+        hash_algo: HashAlgo
     ):
         self.db = database
         self.path = repository_path
         self.worktree = worktree
         self.compression = compression
+        self.hash_algo = hash_algo
 
     def is_initialized(self):
         return self.path.get_repo_dir() is not None and self.db.is_initialized()
@@ -74,30 +79,41 @@ class Repository:
         self.db.delete_branch(branch)
         return Result.Ok(None)
 
-    def hash_file(self, path: Path):
+    def hash(self, buffer: bytes | ReadableBuffer | str):
+        if isinstance(buffer, str):
+            buffer = buffer.encode()
+        hash_algo = self.hash_algo.init()
+        hash_algo.hash(buffer)
+        return hash_algo.digest()
+    
+    def compress(self, buffer: bytes | ReadableBuffer):
+        return self.compression.compress(buffer)
+
+    def to_blob(self, path: Path) -> Result:
         if not path.exists():
             return Result.Fail(f"File {path} not found")
 
         stat = path.lstat()
         fsize = stat.st_size
-        sha1 = hashlib.sha1()
 
-        if fsize <= 32 * 1024:
+        hash, compressed = None, None
+
+        if fsize <= 32 * 1024 * 1024:
             body = path.read_bytes()
-            sha1.update(body)
-            return Result.Ok(sha1.hexdigest())
+            hash = self.hash(body)
+            compressed = self.compress(body)
         elif fsize <= 512 * 1024 * 1024:
             with open(path, 'rb') as f:
                 with mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_file:
-                    sha1.update(mmap_file)
-            return Result.Ok(sha1.hexdigest())
+                    hash = self.hash(mmap_file)
+                    compressed = self.compress(mmap_file)
         else:
             raise NotImplementedError("File size is too large")
+        
+        blob = Blob(object_id=hash, data=compressed, size=fsize, created_at=datetime.now())
+        return Result.Ok(blob)
 
-    def compress_file(self, path: Path):
-        pass
-
-    def add_to_index(self, add_paths: list[str]):
+    def add_index(self, add_paths: list[str]):
         current_dir = Path.cwd()
         repo_dir = self.path.get_repo_dir(current_dir)
         if repo_dir is None:
@@ -110,8 +126,14 @@ class Repository:
                 return Result.Fail(f"Pathspec {path} did not match any files")
             matched_paths.extend(found_paths)
 
+        blobs = []
         for path in matched_paths:
-            hash = self.hash_file(path)
-            print(hash)
+            result = self.to_blob(path)
+            if result.failed:
+                return result
+            blob = result.value
+            blobs.append(blob)
+
+        self.db.create_blobs(blobs)
 
         return Result.Ok(None)

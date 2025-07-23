@@ -79,3 +79,9 @@ class Database:
 
     def delete_branch(self, branch: Ref) -> None:
         self.sqlite.delete(branch)
+
+    def create_blob(self, blob: Blob) -> None:
+        return self.sqlite.insert(Blob)
+
+    def create_blobs(self, blobs: list[Blob]) -> None:
+        self.sqlite.insert_many(blobs)

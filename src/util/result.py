@@ -20,7 +20,7 @@ class Result:
         self.value = value
 
     @property
-    def failure(self):
+    def failed(self):
         """True if operation failed, False if successful (read-only)."""
         return not self.success
 

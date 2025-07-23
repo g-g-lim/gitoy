@@ -12,4 +12,4 @@ class Add:
         self._console = console
 
     def __call__(self, *args: str):
-        self._repository.add_to_index(list(args))
+        self._repository.add_index(list(args))
