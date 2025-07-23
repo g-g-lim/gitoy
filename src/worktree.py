@@ -15,12 +15,9 @@ class Worktree:
         return repo_dir.parent
 
     def find_paths(self, file_path: str, start_dir: Optional[Path] = None) -> list[Path]:
-        if start_dir is None:
-            start_dir = Path.cwd()
-
-        print(start_dir, file_path)
-    
+        start_dir = start_dir or Path.cwd()
         result_paths: list[Path] = []
+        
         if file_path in (".", "./"):
             result_paths = [p for p in start_dir.rglob("*") if p.is_file()]
         elif file_path in ("..", "../"):

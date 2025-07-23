@@ -1,8 +1,11 @@
+import hashlib
+from pathlib import Path
 from repository_path import RepositoryPath
 from database.database import Database
 from util.result import Result
 from worktree import Worktree
 
+import mmap
 
 class Repository:
     def __init__(self, database: Database, repository_path: RepositoryPath, worktree: Worktree):
@@ -64,15 +67,41 @@ class Repository:
         self.db.delete_branch(branch)
         return Result.Ok(None)
 
-    def hash_object(self, file_path: str):
-        pass
+    def hash_object(self, path: Path) -> str:
+        stat = path.lstat()
+        fsize = stat.st_size
+        sha1 = hashlib.sha1()
 
-    def compress_file(self, file_path: str):
+        if fsize <= 32 * 1024:
+            body = path.read_bytes()
+            sha1.update(body)
+            return sha1.hexdigest()
+        elif fsize <= 512 * 1024 * 1024:
+            with open(path, 'rb') as f:
+                with mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_file:
+                    sha1.update(mmap_file)
+            return sha1.hexdigest()
+        else:
+            raise NotImplementedError("File size is too large")
+
+    def compress_file(self, path: Path):
         pass
 
     def add_to_index(self, add_paths: list[str]):
-        found_file_paths = []
+        current_dir = Path.cwd()
+        repo_dir = self.path.get_repo_dir(current_dir)
+        if repo_dir is None:
+            return Result.Fail("Not in a repository")
+        
+        matched_paths: list[Path] = []
         for path in add_paths:
-            found_paths = self.worktree.find_paths(path)
-            found_file_paths.extend(found_paths)
-        return found_file_paths
+            found_paths = self.worktree.find_paths(path, current_dir)
+            if len(found_paths) == 0:
+                return Result.Fail(f"Pathspec {path} did not match any files")
+            matched_paths.extend(found_paths)
+
+        for path in matched_paths:
+            hash = self.hash_object(path)
+            print(hash)
+
+        return Result.Ok(None)

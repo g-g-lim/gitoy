@@ -30,7 +30,7 @@ def test_root_directory():
 
 
 @pytest.fixture(scope="function")
-def temp_directory(test_root_directory):
+def test_directory(test_root_directory):
     """
     project_root/test/test_directory
     """
@@ -44,12 +44,12 @@ def temp_directory(test_root_directory):
 
 
 @pytest.fixture(scope="function")
-def temp_file(test_root_directory):
+def test_file(test_directory):
     """ 
     project_root/test/test_file
     """
     # Create a temporary file
-    _, path = tempfile.mkstemp(dir=test_root_directory)
+    _, path = tempfile.mkstemp(dir=test_directory)
     path = Path(path)
     path.write_text("test")
 

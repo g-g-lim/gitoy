@@ -10,13 +10,13 @@ class Init:
     """
 
     def __init__(self, repository: Repository, console: Console):
-        self.repository = repository
-        self.console = console
+        self._repository = repository
+        self._console = console
 
     def __call__(self):
-        is_initialized = self.repository.is_initialized()
+        is_initialized = self._repository.is_initialized()
         if is_initialized:
-            self.console.info(REPOSITORY_ALREADY_INITIALIZED)
+            self._console.info(REPOSITORY_ALREADY_INITIALIZED)
         else:
-            repo_dir = self.repository.init()
-            self.console.success(INITIALIZED_MESSAGE(repo_dir.absolute()))
+            repo_dir = self._repository.init()
+            self._console.success(INITIALIZED_MESSAGE(repo_dir.absolute()))

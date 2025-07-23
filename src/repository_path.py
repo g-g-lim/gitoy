@@ -11,8 +11,8 @@ class RepositoryPath:
         self.cwd = cwd or Path(os.getcwd())
         self.repo_dir = self.get_repo_dir()
 
-    def get_repo_dir(self) -> Optional[Path]:
-        current_path = self.cwd
+    def get_repo_dir(self, cwd: Optional[Path] = None) -> Optional[Path]:
+        current_path = cwd or self.cwd
         while True:
             repo_dir = current_path / GITOY_DIR
             if repo_dir.exists() and repo_dir.is_dir():

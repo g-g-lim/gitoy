@@ -8,8 +8,8 @@ class Add:
     """
 
     def __init__(self, repository: Repository, console: Console):
-        self.repository = repository
-        self.console = console
+        self._repository = repository
+        self._console = console
 
-    def __call__(self, add_paths: list[str]):
-        self.repository.add_to_index(add_paths)
+    def __call__(self, *args: str):
+        self._repository.add_to_index(list(args))
