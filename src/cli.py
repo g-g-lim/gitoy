@@ -49,10 +49,13 @@ class GitoyCLI:
 def main():
     """Main entry point for Gitoy CLI"""
     repository_path = RepositoryPath()
+    repo_db_path = None
     if repository_path.repo_dir is None:
-        sqlite = SQLite(repository_path.create_repo_db_path())
+        repo_db_path = repository_path.create_repo_db_path()
     else:
-        sqlite = SQLite(repository_path.get_repo_db_path())
+        repo_db_path = repository_path.get_repo_db_path()
+
+    sqlite = SQLite(repo_db_path)
     database = Database(sqlite)
     worktree = Worktree(repository_path)
     compressor = zstandard.ZstdCompressor()
