@@ -4,14 +4,21 @@ from repository_path import RepositoryPath
 from database.database import Database
 from util.result import Result
 from worktree import Worktree
-
+import zstandard
 import mmap
 
 class Repository:
-    def __init__(self, database: Database, repository_path: RepositoryPath, worktree: Worktree):
+    
+    def __init__(self, 
+        database: Database, 
+        repository_path: RepositoryPath, 
+        worktree: Worktree, 
+        compression: zstandard.ZstdCompressor
+    ):
         self.db = database
         self.path = repository_path
         self.worktree = worktree
+        self.compression = compression
 
     def is_initialized(self):
         return self.path.get_repo_dir() is not None and self.db.is_initialized()
@@ -67,7 +74,7 @@ class Repository:
         self.db.delete_branch(branch)
         return Result.Ok(None)
 
-    def hash_object(self, path: Path) -> Result[str, str]:
+    def hash_object(self, path: Path):
         if not path.exists():
             return Result.Fail(f"File {path} not found")
 

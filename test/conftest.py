@@ -7,6 +7,8 @@ from pathlib import Path
 import sys
 import tempfile
 
+import zstandard
+
 from src.database.sqlite import SQLite
 from src.worktree import Worktree
 from src.repository_path import RepositoryPath
@@ -44,10 +46,14 @@ def database(sqlite):
 def worktree(repository_path):
     return Worktree(repository_path)
 
+@pytest.fixture(scope="session")
+def compression():
+    return zstandard.ZstdCompressor()
+
 
 @pytest.fixture(scope="session")
-def repository(database, repository_path, worktree):
-    return Repository(database, repository_path, worktree)
+def repository(database, repository_path, worktree, compression):
+    return Repository(database, repository_path, worktree, compression)
 
 
 @pytest.fixture(scope="session")

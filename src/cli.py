@@ -7,15 +7,13 @@ import fire
 import sys
 
 from repository import Repository
-from command.init import Init
 from database.database import Database
 from database.sqlite import SQLite
-from command.branch import Branch
-from command.add import Add
 from worktree import Worktree
 from repository_path import RepositoryPath
 from util.console import Console
-
+from command import Command, Init, Branch, Add
+import zstandard
 
 class GitoyCLI:
     """
@@ -30,25 +28,10 @@ class GitoyCLI:
     - add: Add a file to the Gitoy repository index
     """
     
-    def __init__(self):
+    def __init__(self, command_list: list[Command]):
         """Initialize Gitoy CLI"""
 
-        _repository_path = RepositoryPath()
-        if _repository_path.repo_dir is None:
-            _sqlite = SQLite(_repository_path.create_repo_db_path())
-        else:
-            _sqlite = SQLite(_repository_path.get_repo_db_path())
-        _database = Database(_sqlite)
-        _worktree = Worktree(_repository_path)
-        _repository = Repository(_database, _repository_path, _worktree)
-        _console = Console()
-        _command_list = [
-            Init(_repository, _console), 
-            Branch(_repository, _console),
-            Add(_repository, _console)
-        ]
-
-        for command in _command_list:
+        for command in command_list:
             setattr(self, command.__class__.__name__.lower(), command)
     
     def version(self):
@@ -62,7 +45,24 @@ class GitoyCLI:
 
 def main():
     """Main entry point for Gitoy CLI"""
-    app = GitoyCLI()
+    repository_path = RepositoryPath()
+    if repository_path.repo_dir is None:
+        sqlite = SQLite(repository_path.create_repo_db_path())
+    else:
+        sqlite = SQLite(repository_path.get_repo_db_path())
+    database = Database(sqlite)
+    worktree = Worktree(repository_path)
+    compression = zstandard.ZstdCompressor()
+
+    repository = Repository(database, repository_path, worktree, compression)
+    console = Console()
+    command_list = [
+        Init(repository, console), 
+        Branch(repository, console),
+        Add(repository, console)
+    ]
+
+    app = GitoyCLI(command_list)
     fire.Fire(app)
 
 if __name__ == "__main__":

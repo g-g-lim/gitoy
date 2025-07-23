@@ -10,19 +10,14 @@ Usage:
 
 import sys
 import subprocess
-import os
 from pathlib import Path
 
 def main():
     """Run tests using pytest with proper environment setup."""
-    # Set PYTHONPATH to include src directory
+    # Get project root directory
     project_root = Path(__file__).parent.parent
-    src_path = project_root / "src"
     
-    env = os.environ.copy()
-    env["PYTHONPATH"] = str(src_path)
-    
-    # Build pytest command
+    # Build pytest command - use uv run for consistent environment
     cmd = ["uv", "run", "pytest", "test/test_repository.py"]
     
     # Handle command line arguments
@@ -41,18 +36,25 @@ def main():
     else:
         cmd.append("-v")  # Default to verbose
     
-    # Add coverage if available
+    # Add coverage if pytest-cov is available
     try:
-        cmd.extend(["--cov=src", "--cov-report=term-missing"])
-    except ImportError:
-        pass
+        # Check if pytest-cov is available
+        result = subprocess.run(
+            ["uv", "run", "python", "-c", "import pytest_cov"], 
+            capture_output=True, 
+            cwd=project_root
+        )
+        if result.returncode == 0:
+            cmd.extend(["--cov=src", "--cov-report=term-missing"])
+    except Exception:
+        pass  # Continue without coverage
     
     # Run tests
     print(f"Running command: {' '.join(cmd)}")
     print(f"Working directory: {project_root}")
     print("=" * 50)
     
-    result = subprocess.run(cmd, cwd=project_root, env=env)
+    result = subprocess.run(cmd, cwd=project_root)
     return result.returncode
 
 if __name__ == "__main__":
