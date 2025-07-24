@@ -10,6 +10,7 @@ import tempfile
 from unittest.mock import patch
 import sys
 
+
 from src.database.entity.blob import Blob
 from src.database.sqlite import SQLite
 from src.repository import Repository
@@ -46,6 +47,8 @@ class TestRepositoryBranch:
 
     def test_list_branches(self, repository: Repository):
         """Test listing all branches."""
+        repository.init()
+
         result = repository.list_branches()
         head_branch = result[0]
         
@@ -60,6 +63,8 @@ class TestRepositoryBranch:
 
     def test_create_branch_when_no_initial_commit_exists(self, repository: Repository):
         """Test creating a new branch when no initial commit exists."""
+        repository.init()
+
         result = repository.create_branch("test_branch")
         
         assert result.success is True
@@ -76,10 +81,12 @@ class TestRepositoryBranch:
 
     def test_create_branch_with_same_name(self, repository: Repository):
         """Test creating a new branch with same name."""
-        result = repository.create_branch("test_branch")
+        repository.init()
+
+        result = repository.create_branch("main")
         
         assert result.success is False
-        assert result.error == "Branch refs/heads/test_branch already exists"
+        assert result.error == "Branch refs/heads/main already exists"
 
     # def test_create_branch_when_initial_commit_exists(self, repository):
     #     """Test creating a new branch when initial commit exists."""
@@ -87,6 +94,8 @@ class TestRepositoryBranch:
 
     def test_update_head_branch(self, repository: Repository):
         """Test updating head branch."""
+        repository.init()
+
         result = repository.update_head_branch("test_branch_1")
 
         assert result.success is True
@@ -99,23 +108,30 @@ class TestRepositoryBranch:
 
     def test_update_head_branch_with_same_name(self, repository: Repository):
         """Test updating head branch with same name."""
-        result = repository.update_head_branch("test_branch_1")
+        repository.init()
+
+        result = repository.update_head_branch("main")
 
         assert result.success is False
-        assert result.error == "Branch refs/heads/test_branch_1 already exists"
+        assert result.error == "Branch refs/heads/main already exists"
     
     # def test_delete_branch(self, repository):
     #     raise NotImplementedError()
 
     def test_delete_branch_when_not_exists_branch(self, repository: Repository):
+        repository.init()
+
         result = repository.delete_branch("test_branch_2")
         assert result.success is False
         assert result.error == "Branch refs/heads/test_branch_2 not found"
 
     def test_delete_branch_with_head_branch(self, repository: Repository):
-        result = repository.delete_branch("test_branch_1")
+        repository.init()
+
+        result = repository.delete_branch("main")
         assert result.success is False
-        assert result.error == "Branch refs/heads/test_branch_1 is the head branch"
+        assert result.error == "Branch refs/heads/main is the head branch"
+
 
 class TestRepositoryAddToIndex:
     """Test cases for Repository add to index."""
@@ -133,17 +149,32 @@ class TestRepositoryAddToIndex:
             assert result.success is False
             assert result.error == "Pathspec temp_file did not match any files"
 
-    def test_add_to_index_with_exists_file(self, sqlite: SQLite, repository: Repository, test_file: Path):
+    def test_add_to_index_with_one_file(self, sqlite: SQLite, repository: Repository, test_file: Path):
         with patch('pathlib.Path.cwd') as mock_cwd:
             mock_cwd.return_value = test_file.parent
 
             result = repository.add_index([test_file.name])
+            compressed = repository.compress(test_file.read_bytes())
 
             assert result.success is True
 
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 1
             assert blobs[0]["object_id"] == repository.hash(test_file.read_bytes())
+            assert blobs[0]['data'] == compressed
+            assert blobs[0]['size'] == test_file.stat().st_size
+
+    def test_add_to_index_with_multiple_same_files(self, sqlite: SQLite, repository: Repository, test_directory: Path):
+        with patch('pathlib.Path.cwd') as mock_cwd:
+            mock_cwd.return_value = test_directory
+            _, path1 = tempfile.mkstemp(dir=test_directory)
+            _, path2 = tempfile.mkstemp(dir=test_directory)
+            result = repository.add_index([Path(path1).name, Path(path2).name])
+
+            assert result.success is True
+
+            blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
+            assert len(blobs) == 1
 
 
 class TestRepositoryHashFile:
@@ -209,4 +240,19 @@ class TestRepositoryHashFile:
         sha1.update(test_image_file.read_bytes())
 
         assert result == sha1.hexdigest()
-        
+
+
+class TestCompressFile:
+
+    def test_compress(self, repository: Repository):
+      # Create larger test data
+        test_data = b"Hello World! " * 100  # Repeated text compresses well
+        compressed = repository.compress(test_data)
+        assert len(compressed) < len(test_data)
+
+    def test_compress_with_small_data(self, repository: Repository):
+        value = b"Hello World!"
+        compressed = repository.compress(value)
+        original_size = len(value)
+
+        assert len(compressed) > original_size

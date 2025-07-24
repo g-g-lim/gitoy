@@ -36,8 +36,18 @@ class SQLite:
 
     def list_tables(self):
         conn, cursor = self.get_connection()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")        
         return [table[0] for table in  cursor.fetchall()]
+    
+    def truncate_table(self, table_name: str):
+        conn, cursor = self.get_connection()
+        cursor.execute(f"DELETE FROM {table_name}")
+        conn.commit()
+
+    def truncate_all(self):
+        tables = self.list_tables()
+        for table in tables:
+            self.truncate_table(table)
 
     def insert(self, entity: Entity):
         conn, cursor = self.get_connection()
@@ -50,7 +60,7 @@ class SQLite:
 
     def insert_many(self, entities: list[Entity]):
         if not entities:
-            return
+            return []
             
         conn, cursor = self.get_connection()
         
@@ -69,6 +79,8 @@ class SQLite:
         
         cursor.executemany(sql, values_list)
         conn.commit()
+
+        return entities
 
     def select(self, query: str) -> list[dict]:
         conn, cursor = self.get_connection()

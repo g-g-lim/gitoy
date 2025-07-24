@@ -9,6 +9,7 @@ from database.entity.tag import Tag
 from database.entity.tree import Tree
 from database.entity.tree_entry import TreeEntry
 from database.entity.index_entry import IndexEntry
+from util.array import unique 
 
 
 class Database: 
@@ -84,4 +85,5 @@ class Database:
         return self.sqlite.insert(Blob)
 
     def create_blobs(self, blobs: list[Blob]) -> None:
-        self.sqlite.insert_many(blobs)
+        unique_blobs = list(unique(blobs, 'object_id'))
+        return self.sqlite.insert_many(unique_blobs)

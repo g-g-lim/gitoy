@@ -22,6 +22,16 @@ if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
 
+
+@pytest.fixture(scope="session")
+def test_root_directory():
+    """
+    The root directory of the test suite.
+    project_root/test/
+    """
+    return Path(__file__).parent
+
+
 @pytest.fixture(scope="session")
 def repository_path(test_root_directory):
     repository_path = RepositoryPath(test_root_directory)
@@ -32,46 +42,41 @@ def repository_path(test_root_directory):
         shutil.rmtree(repository_path.repo_dir)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def sqlite(repository_path):
-    return SQLite(repository_path.create_repo_db_path())
+    sqlite = SQLite(repository_path.create_repo_db_path())
+
+    yield sqlite
+
+    sqlite.truncate_all()
 
 
-@pytest.fixture(scope="session")  
+@pytest.fixture(scope="function")  
 def database(sqlite):
     database = Database(sqlite)
     return database
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def worktree(repository_path):
     return Worktree(repository_path)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def hash_algo():
     return Sha1()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def compression():
     return zstandard.ZstdCompressor()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def repository(database, repository_path, worktree, compression, hash_algo):
     return Repository(
         database, repository_path, worktree, compression, hash_algo
     )
-
-
-@pytest.fixture(scope="session")
-def test_root_directory():
-    """
-    The root directory of the test suite.
-    project_root/test/
-    """
-    return Path(__file__).parent
 
 
 @pytest.fixture(scope="function")

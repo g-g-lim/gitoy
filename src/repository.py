@@ -79,14 +79,14 @@ class Repository:
         self.db.delete_branch(branch)
         return Result.Ok(None)
 
-    def hash(self, buffer: bytes | ReadableBuffer | str):
+    def hash(self, buffer: bytes | ReadableBuffer | str) -> str:
         if isinstance(buffer, str):
             buffer = buffer.encode()
         hash_algo = self.hash_algo.init()
         hash_algo.hash(buffer)
         return hash_algo.digest()
     
-    def compress(self, buffer: bytes | ReadableBuffer):
+    def compress(self, buffer: bytes | ReadableBuffer) -> bytes:
         return self.compression.compress(buffer)
 
     def to_blob(self, path: Path) -> Result:
@@ -126,13 +126,12 @@ class Repository:
                 return Result.Fail(f"Pathspec {path} did not match any files")
             matched_paths.extend(found_paths)
 
-        blobs = []
+        blobs: list[Blob] = []
         for path in matched_paths:
             result = self.to_blob(path)
             if result.failed:
                 return result
-            blob = result.value
-            blobs.append(blob)
+            blobs.append(result.value)
 
         self.db.create_blobs(blobs)
 
