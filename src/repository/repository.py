@@ -130,8 +130,8 @@ class Repository:
                 return Result.Fail(f"Pathspec {path} did not match any files")
             matched_files.extend(files)
 
-        indexEntries = [file.to_index_entry(self.hash(file)) for file in matched_files]
-        result = self.index_store.save(indexEntries)
+        index_entries = [file.to_index_entry(self.hash(file)) for file in matched_files]
+        result = self.index_store.save(index_entries)
         created_entry_paths = [entry.file_path for entry in result.value]
 
         blobs = [self.to_blob(file) for file in matched_files if file.relative_path.as_posix() in created_entry_paths] 

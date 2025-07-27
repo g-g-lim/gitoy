@@ -159,7 +159,7 @@ class TestRepositoryAddToIndex:
 
             compressed = repository.compress(test_file)
             assert blobs[0]['data'] == compressed
-            assert blobs[0]['size'] == test_file.stat().st_size
+            assert blobs[0]['size'] == test_file.size
 
     def test_add_to_index_with_multiple_same_files(self, sqlite: SQLite, repository: Repository, test_directory: Path):
         repository.init()
