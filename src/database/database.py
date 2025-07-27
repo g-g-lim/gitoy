@@ -89,7 +89,7 @@ class Database:
         return self.sqlite.insert_many(unique_blobs)
     
     def list_blobs_by_ids(self, ids: list[str]) -> list[Blob]:
-        quoted_ids = ','.join([f"'{id_}" for id_ in ids])
+        quoted_ids = ','.join([f"'{id_}'" for id_ in ids])
         blobs = self.sqlite.select(f"SELECT * FROM {Blob.table_name()} WHERE object_id IN ({quoted_ids})")
         return [Blob(**blob) for blob in blobs]
     

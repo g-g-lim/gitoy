@@ -143,6 +143,8 @@ class TestRepositoryAddToIndex:
         assert result.error == "Not in a repository"
 
     def test_add_to_index_with_not_exists_file(self, repository: Repository, test_directory: Path):
+        repository.init()
+
         with patch('pathlib.Path.cwd') as mock_cwd:
             mock_cwd.return_value = test_directory
 
@@ -150,9 +152,11 @@ class TestRepositoryAddToIndex:
             assert result.success is False
             assert result.error == "Pathspec temp_file did not match any files"
 
-    def test_add_to_index_with_one_file(self, sqlite: SQLite, repository: Repository, test_directory: Path, test_file: File):
-        with patch('pathlib.Path.cwd') as mock_cwd:
-            mock_cwd.return_value = test_directory
+    def test_add_to_index_with_one_file(self, sqlite: SQLite, repository: Repository, test_file: File):
+        repository.init()
+
+        with patch('pathlib.Path.cwd') as mock_cwd:            
+            mock_cwd.return_value = test_file.path.parent
 
             result = repository.add_index([test_file.path.name])
 
@@ -192,6 +196,8 @@ class TestRepositoryAddToIndex:
             assert len(blobs) == 2
         
     def test_add_to_index_with_large_file(self, sqlite: SQLite, repository: Repository, test_directory: Path, test_large_file: File):    
+        repository.init()
+
         with patch('pathlib.Path.cwd') as mock_cwd:
             mock_cwd.return_value = test_directory
 

@@ -94,7 +94,7 @@ class Repository:
             hasher.hash(body)
         elif file.is_mid:
             with open(file.path, 'rb') as f:
-                with mmap.mmap(f.fileno, length=0, access=mmap.ACCESS_READ) as mmap_file:
+                with mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_file:
                     hasher.hash(mmap_file)
         else:
             raise NotImplementedError("File size is too large")
@@ -105,16 +105,16 @@ class Repository:
             return self.compression.compress(file.read_body())
         elif file.is_small:
             with open(file.path, 'rb') as f:
-                with mmap.mmap(f.fileno, length=0, access=mmap.ACCESS_READ) as mmap_file:
+                with mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_file:
                     return self.compression.compress(mmap_file)
         else:
             raise NotImplementedError("File size is too large")
 
-    def to_blob(self, file: File) -> Result:
+    def to_blob(self, file: File) -> Blob:
         hash = self.hash(file)
         compressed = self.compress(file)
         blob = Blob(object_id=hash, data=compressed, size=file.size, created_at=datetime.now())
-        return Result.Ok(blob)
+        return blob
     
     def add_index(self, paths: list[str]):
         current_dir = Path.cwd()
@@ -134,7 +134,10 @@ class Repository:
         result = self.index_store.save(indexEntries)
         created_entry_paths = [entry.file_path for entry in result.value]
 
-        blobs = [self.to_blob(file) for file in matched_files if file in created_entry_paths] 
+        blobs = [self.to_blob(file) for file in matched_files if file.relative_path.as_posix() in created_entry_paths] 
+        if len(blobs) == 0:
+            return Result.Ok(None)
+        
         result = self.blob_store.save(blobs)
 
         return Result.Ok(None)

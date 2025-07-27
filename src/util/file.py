@@ -30,8 +30,8 @@ class File:
         return self.stat().st_size
     
     @property
-    def relative_path(self):
-        return self.path.relative_to(self.root_dir).as_posix()
+    def relative_path(self) -> Path:
+        return self.path.relative_to(self.root_dir)
 
     @property
     def exists(self):
@@ -53,7 +53,7 @@ class File:
         stat = self.stat()
         entry = IndexEntry(
             object_id=object_id,
-            file_path=self.relative_path,
+            file_path=self.relative_path.as_posix(),
             file_mode=oct(stat.st_mode), 
             file_size= stat.st_size,
             ctime=stat.st_ctime,

@@ -28,7 +28,7 @@ class RepositoryPath:
             return None
         return Path(repo_dir, GITOY_DB_FILE)
 
-    def create_repo_dir(self):
+    def create_repo_dir(self) -> Path:
         if self.repo_dir is not None:
             return self.repo_dir
         

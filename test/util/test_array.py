@@ -1,6 +1,6 @@
 from datetime import datetime
-from database.entity.blob import Blob
-from util.array import unique
+from src.database.entity.blob import Blob
+from src.util.array import unique
 
 
 def test_array_unique():

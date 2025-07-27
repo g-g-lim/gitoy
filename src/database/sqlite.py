@@ -15,7 +15,9 @@ class SQLite:
     def connect(self):
         if self.path is None:
             raise ValueError("Path is not set")
-        
+
+        print(self.path.absolute())
+
         self.conn = sqlite3.connect(self.path.absolute())
         self.cursor = self.conn.cursor()
         self.conn.execute("PRAGMA journal_mode = WAL")
@@ -59,7 +61,7 @@ class SQLite:
         conn.commit()
 
     def insert_many(self, entities: list[Entity]):
-        if not entities:
+        if len(entities) == 0:
             return []
             
         conn, cursor = self.get_connection()

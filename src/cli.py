@@ -66,7 +66,15 @@ def main():
     sha1 = Sha1()
     index_store = IndexStore(database)
     blob_store = BlobStore(database)
-    repository = Repository(database, repository_path, worktree, compressor, sha1, index_store, blob_store)
+    repository = Repository(
+        database, 
+        repository_path, 
+        worktree, 
+        compressor, 
+        sha1, 
+        index_store, 
+        blob_store
+    )
     console = Console()
     commands= [
         Init(repository, console), 

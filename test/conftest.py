@@ -122,23 +122,20 @@ def test_directory(test_root_directory):
 @pytest.fixture(scope="function")
 def test_file_path(test_directory):
     """ 
-    project_root/test/test_file
+    project_root/test/test_directory/test_file
     """
-    # Create a temporary file
     _, path = tempfile.mkstemp(dir=test_directory)
     path = Path(path)
-    path.write_text("test")
 
     yield path
 
-    # Teardown: remove the file if it exists
     if path.exists():
         path.unlink()
 
 
 @pytest.fixture(scope="function")   
-def test_file(test_file_path):
-    yield File(test_file_path, test_file_path.parent)
+def test_file(test_file_path, test_root_directory):
+    yield File(test_file_path, test_root_directory)
 
     
 @pytest.fixture(scope="function")
@@ -154,8 +151,8 @@ def test_large_file_path(test_directory):
 
 
 @pytest.fixture(scope="function")   
-def test_large_file(test_large_file_path):
-    yield File(test_large_file_path, test_large_file_path.parent)
+def test_large_file(test_large_file_path, test_root_directory):
+    yield File(test_large_file_path, test_root_directory)
 
 
 @pytest.fixture(scope="function")
