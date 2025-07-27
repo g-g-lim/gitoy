@@ -7,7 +7,6 @@ from pathlib import Path
 import sys
 import tempfile
 
-from src.repository.repository import Repository
 from src.repository.worktree import Worktree
 from src.util.file import File
 
@@ -20,9 +19,7 @@ if str(src_path) not in sys.path:
 class TestWorktreeFindPaths:
     """Test cases for Repository add method."""
 
-    def test_find_paths_with_normal_file(self, repository: Repository, worktree: Worktree, test_file: File):
-        repository.init()
-        
+    def test_find_paths_with_normal_file(self, worktree: Worktree, test_file: File):        
         result = worktree.find_files(test_file.path.name, test_file.path.parent)
         assert len(result) == 1
         assert result[0].path.name == test_file.path.name

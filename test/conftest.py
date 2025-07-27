@@ -34,13 +34,14 @@ def test_root_directory():
     return Path(__file__).parent
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def repository_path(test_root_directory):
     repository_path = RepositoryPath(test_root_directory)
+    repo_dir = repository_path.create_repo_dir()
     
     yield repository_path
-    
-    if repository_path.repo_dir is not None:
+
+    if repo_dir is not None:
         shutil.rmtree(repository_path.repo_dir)
 
 

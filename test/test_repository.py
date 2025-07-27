@@ -26,16 +26,7 @@ class TestRepositoryInit:
     """Test cases for Repository class."""
 
     def test_init_repository(self, repository: Repository):
-        """Test repository initialization check when both file system and database are initialized."""
         repository.init()
-        result = repository.is_initialized()
-        
-        assert result is True
-        assert repository.path.repo_dir is not None
-        assert repository.path.get_repo_db_path() is not None
-
-    def test_init_repository_with_existing_repo(self, repository: Repository):
-        """Test repository initialization check when both file system and database are initialized."""
         result = repository.is_initialized()
         
         assert result is True
@@ -171,6 +162,8 @@ class TestRepositoryAddToIndex:
             assert blobs[0]['size'] == test_file.stat().st_size
 
     def test_add_to_index_with_multiple_same_files(self, sqlite: SQLite, repository: Repository, test_directory: Path):
+        repository.init()
+
         with patch('pathlib.Path.cwd') as mock_cwd:
             mock_cwd.return_value = test_directory
             _, path1 = tempfile.mkstemp(dir=test_directory)
@@ -183,6 +176,8 @@ class TestRepositoryAddToIndex:
             assert len(blobs) == 1
         
     def test_add_to_index_with_multiple_files(self, sqlite: SQLite, repository: Repository, test_directory: Path):
+        repository.init()
+        
         with patch('pathlib.Path.cwd') as mock_cwd:
             mock_cwd.return_value = test_directory
             _, path1 = tempfile.mkstemp(dir=test_directory)
