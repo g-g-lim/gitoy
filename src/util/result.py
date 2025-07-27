@@ -20,7 +20,7 @@ class Result:
         self.value = value
 
     @property
-    def failed(self):
+    def failed(self) -> bool:
         """True if operation failed, False if successful (read-only)."""
         return not self.success
 
@@ -37,11 +37,11 @@ class Result:
             return f'<Result success={self.success}, message="{self.error}">'
 
     @classmethod
-    def Fail(cls, error):
+    def Fail(cls, error) -> 'Result':
         """Create a Result object for a failed operation."""
         return cls(False, value=None, error=error)
 
     @classmethod
-    def Ok(cls, value=None):
+    def Ok(cls, value=None) -> 'Result':
         """Create a Result object for a successful operation."""
         return cls(True, value=value, error=None)

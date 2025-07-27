@@ -103,3 +103,10 @@ class SQLite:
         sql = f"DELETE FROM {entity.table_name()} WHERE {entity.primary_key_column()} = ?"
         cursor.execute(sql, [entity.primary_key])
         conn.commit()
+
+    def delete_many(self, entities: list[Entity]):
+        entities = [entity.primary_key for entity in entities]
+        conn, cursor = self.get_connection()
+        sql = f"DELETE FROM {entities[0].table_name()} WHERE {entities[0].primary_key_column()} IN ({', '.join(['?'] * len(entities))})"
+        cursor.execute(sql, [entity.primary_key for entity in entities])
+        conn.commit()

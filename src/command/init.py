@@ -1,4 +1,4 @@
-from repository import Repository
+from repository.repository import Repository
 from util.console import Console
 from util.constant import INITIALIZED_MESSAGE, REPOSITORY_ALREADY_INITIALIZED
 

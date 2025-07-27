@@ -6,15 +6,17 @@ Gitoy CLI - A simple File Version Control CLI tool built with Python Fire
 import fire
 import sys
 
-from repository import Repository
+from repository.blob import BlobStore
+from repository.index import IndexStore
+from repository.repository import Repository
 from command.init import Init
 from database.database import Database
 from database.sqlite import SQLite
 from command.branch import Branch
 from command.add import Add
-from hash_algo import Sha1
-from worktree import Worktree
-from repository_path import RepositoryPath
+from util.hash_algo import Sha1
+from repository.worktree import Worktree
+from repository.path import RepositoryPath
 from util.console import Console
 from command import Command
 import zstandard
@@ -32,10 +34,10 @@ class GitoyCLI:
     - add: Add a file to the Gitoy repository index
     """
     
-    def __init__(self, command_list: list[Command]):
+    def __init__(self, commands: list[Command]):
         """Initialize Gitoy CLI"""
 
-        for command in command_list:
+        for command in commands:
             setattr(self, command.__class__.__name__.lower(), command)
     
     def version(self):
@@ -49,6 +51,7 @@ class GitoyCLI:
 
 def main():
     """Main entry point for Gitoy CLI"""
+
     repository_path = RepositoryPath()
     repo_db_path = None
     if repository_path.repo_dir is None:
@@ -60,16 +63,17 @@ def main():
     database = Database(sqlite)
     worktree = Worktree(repository_path)
     compressor = zstandard.ZstdCompressor()
-    hash_algo = Sha1()
-    repository = Repository(database, repository_path, worktree, compressor, hash_algo)
+    sha1 = Sha1()
+    index_store = IndexStore(database)
+    blob_store = BlobStore(database)
+    repository = Repository(database, repository_path, worktree, compressor, sha1, index_store, blob_store)
     console = Console()
-    command_list = [
+    commands= [
         Init(repository, console), 
         Branch(repository, console),
         Add(repository, console)
     ]
-
-    app = GitoyCLI(command_list)
+    app = GitoyCLI(commands)
     fire.Fire(app)
 
 if __name__ == "__main__":

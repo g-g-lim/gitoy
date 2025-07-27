@@ -83,7 +83,23 @@ class Database:
 
     def create_blob(self, blob: Blob) -> None:
         return self.sqlite.insert(Blob)
-
+    
     def create_blobs(self, blobs: list[Blob]) -> None:
         unique_blobs = list(unique(blobs, 'object_id'))
         return self.sqlite.insert_many(unique_blobs)
+    
+    def list_blobs_by_ids(self, ids: list[str]) -> list[Blob]:
+        quoted_ids = ','.join([f"'{id_}" for id_ in ids])
+        blobs = self.sqlite.select(f"SELECT * FROM {Blob.table_name()} WHERE object_id IN ({quoted_ids})")
+        return [Blob(**blob) for blob in blobs]
+    
+    def list_index_entries_by_paths(self, paths: list[str]) -> list[IndexEntry]:    
+        quoted_paths = ','.join([f"'{path}'" for path in paths])
+        index_entries = self.sqlite.select(f"SELECT * FROM {IndexEntry.table_name()} WHERE file_path IN ({quoted_paths})")
+        return [IndexEntry(**index_entry) for index_entry in index_entries]
+
+    def create_index_entries(self, index_entries: list[IndexEntry]) -> None:
+        return self.sqlite.insert_many(index_entries)
+    
+    def delete_index_entries(self, entries: list[IndexEntry]) -> None:
+        return self.sqlite.delete_many(entries)

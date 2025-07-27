@@ -1,20 +1,22 @@
 """
-Pytest configuration and shared fixtures for Repository testing.
+Pytest configuration and shared fixtures for testing.
 """
 import shutil
 import pytest
 from pathlib import Path
 import sys
 import tempfile
-
+from src.util.file import File
 import zstandard
 
+from src.repository.blob import BlobStore
+from src.repository.index import IndexStore
 from src.database.sqlite import SQLite
-from src.hash_algo import Sha1
-from src.worktree import Worktree
-from src.repository_path import RepositoryPath
+from src.util.hash_algo import Sha1
+from src.repository.worktree import Worktree
+from src.repository.path import RepositoryPath
 from src.database.database import Database
-from src.repository import Repository
+from src.repository.repository import Repository
 
 
 src_path = Path(__file__).parent.parent / "src"
@@ -73,9 +75,33 @@ def compression():
 
 
 @pytest.fixture(scope="function")
-def repository(database, repository_path, worktree, compression, hash_algo):
+def index_store(database):
+    return IndexStore(database)
+
+
+@pytest.fixture(scope="function")
+def blob_store(database):
+    return BlobStore(database)
+
+
+@pytest.fixture(scope="function")
+def repository(
+    database, 
+    repository_path, 
+    worktree, 
+    compression, 
+    hash_algo, 
+    index_store, 
+    blob_store
+):
     return Repository(
-        database, repository_path, worktree, compression, hash_algo
+        database, 
+        repository_path, 
+        worktree, 
+        compression, 
+        hash_algo,
+        index_store,
+        blob_store
     )
 
 
@@ -94,7 +120,7 @@ def test_directory(test_root_directory):
 
 
 @pytest.fixture(scope="function")
-def test_file(test_directory):
+def test_file_path(test_directory):
     """ 
     project_root/test/test_file
     """
@@ -109,15 +135,27 @@ def test_file(test_directory):
     if path.exists():
         path.unlink()
 
+
+@pytest.fixture(scope="function")   
+def test_file(test_file_path):
+    yield File(test_file_path, test_file_path.parent)
+
     
 @pytest.fixture(scope="function")
-def test_large_file(test_directory):
+def test_large_file_path(test_directory):
     _, path = tempfile.mkstemp(dir=test_directory)
     path = Path(path)
     path.write_bytes(b"a" * 512 * 1024 * 1024)
+
     yield path
+
     if path.exists():
         path.unlink()
+
+
+@pytest.fixture(scope="function")   
+def test_large_file(test_large_file_path):
+    yield File(test_large_file_path, test_large_file_path.parent)
 
 
 @pytest.fixture(scope="function")
@@ -134,7 +172,7 @@ def test_image_file(test_directory):
         b"\x08\xd7c\xf8\x0f\x00\x01\x01\x01\x00\x18\xdd\x8d\x18"
         b"\x00\x00\x00\x00IEND\xaeB`\x82"
     )
-    yield image_file
+    yield File(image_file, test_directory)
 
     if image_file.exists():
         image_file.unlink()

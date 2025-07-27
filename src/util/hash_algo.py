@@ -8,6 +8,8 @@ class HashAlgo(Protocol):
     def hash(self, buffer: ReadableBuffer) -> None:
         ...
 
+    def digest(self) -> str:
+        ...
 
 class Sha1(HashAlgo):
 
@@ -15,7 +17,7 @@ class Sha1(HashAlgo):
         self._hash = hashlib.sha1()
 
     @classmethod
-    def init(cls) -> HashAlgo:
+    def init(cls):
         return cls()
 
     def hash(self, buffer: ReadableBuffer) -> None:

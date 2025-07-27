@@ -1,4 +1,4 @@
-from repository import Repository
+from repository.repository import Repository
 from util.console import Console
 
 class Add: 
@@ -11,5 +11,6 @@ class Add:
         self._repository = repository
         self._console = console
 
-    def __call__(self, *args: str):
-        self._repository.add_index(list(args))
+    def __call__(self, *paths: str):
+        self._repository.add_index(list(paths))
+    

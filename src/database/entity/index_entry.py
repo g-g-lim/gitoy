@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from datetime import datetime
 
 
 from database.entity.entity import Entity
@@ -30,8 +29,8 @@ class IndexEntry(Entity):
     object_id: str
     file_mode: str
     file_size: int
-    ctime: datetime
-    mtime: datetime
+    ctime: int | float
+    mtime: int | float
     dev: int
     inode: int
     uid: int
@@ -52,8 +51,8 @@ class IndexEntry(Entity):
             "object_id TEXT",
             "file_mode TEXT",
             "file_size INTEGER",
-            "ctime TIMESTAMP",
-            "mtime TIMESTAMP",
+            "ctime INTEGER",
+            "mtime INTEGER",
             "dev INTEGER",
             "inode INTEGER",
             "uid INTEGER",
@@ -63,3 +62,12 @@ class IndexEntry(Entity):
             "skip_worktree BOOLEAN",
             "intent_to_add BOOLEAN",
         ]
+    
+    def __eq__(self, other: "IndexEntry"):
+        return (
+            self.file_path == other.file_path
+            and self.object_id == other.object_id
+            and self.file_size == other.file_size
+            and self.file_mode == other.file_mode
+        )
+        

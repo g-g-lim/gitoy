@@ -1,29 +1,37 @@
 from datetime import datetime
 from pathlib import Path
-from repository_path import RepositoryPath
+from repository.blob import BlobStore
+from repository.index import IndexStore
+from util.file import File
+from .path import RepositoryPath
 from database.database import Database
 from database.entity.blob import Blob
 from util.result import Result
-from worktree import Worktree
-from custom_types import ReadableBuffer
+from .worktree import Worktree
 import zstandard
 import mmap
-from hash_algo import HashAlgo
+from util.hash_algo import HashAlgo
+
 
 class Repository:
     
-    def __init__(self, 
+    def __init__(
+        self, 
         database: Database, 
         repository_path: RepositoryPath, 
         worktree: Worktree, 
         compression: zstandard.ZstdCompressor,
-        hash_algo: HashAlgo
+        hash_algo: HashAlgo,
+        index_store: IndexStore,
+        blob_store: BlobStore
     ):
         self.db = database
         self.path = repository_path
         self.worktree = worktree
         self.compression = compression
         self.hash_algo = hash_algo
+        self.index_store = index_store
+        self.blob_store = blob_store
 
     def is_initialized(self):
         return self.path.get_repo_dir() is not None and self.db.is_initialized()
@@ -79,60 +87,54 @@ class Repository:
         self.db.delete_branch(branch)
         return Result.Ok(None)
 
-    def hash(self, buffer: bytes | ReadableBuffer | str) -> str:
-        if isinstance(buffer, str):
-            buffer = buffer.encode()
-        hash_algo = self.hash_algo.init()
-        hash_algo.hash(buffer)
-        return hash_algo.digest()
-    
-    def compress(self, buffer: bytes | ReadableBuffer) -> bytes:
-        return self.compression.compress(buffer)
-
-    def to_blob(self, path: Path) -> Result:
-        if not path.exists():
-            return Result.Fail(f"File {path} not found")
-
-        stat = path.lstat()
-        fsize = stat.st_size
-
-        hash, compressed = None, None
-
-        if fsize <= 32 * 1024 * 1024:
-            body = path.read_bytes()
-            hash = self.hash(body)
-            compressed = self.compress(body)
-        elif fsize <= 512 * 1024 * 1024:
-            with open(path, 'rb') as f:
-                with mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_file:
-                    hash = self.hash(mmap_file)
-                    compressed = self.compress(mmap_file)
+    def hash(self, file: File) -> str:
+        hasher= self.hash_algo.init()
+        body= file.read_body()
+        if file.is_small:
+            hasher.hash(body)
+        elif file.is_mid:
+            with open(file.path, 'rb') as f:
+                with mmap.mmap(f.fileno, length=0, access=mmap.ACCESS_READ) as mmap_file:
+                    hasher.hash(mmap_file)
         else:
             raise NotImplementedError("File size is too large")
-        
-        blob = Blob(object_id=hash, data=compressed, size=fsize, created_at=datetime.now())
-        return Result.Ok(blob)
+        return hasher.digest()
+    
+    def compress(self, file: File) -> bytes:
+        if  file.is_mid:
+            return self.compression.compress(file.read_body())
+        elif file.is_small:
+            with open(file.path, 'rb') as f:
+                with mmap.mmap(f.fileno, length=0, access=mmap.ACCESS_READ) as mmap_file:
+                    return self.compression.compress(mmap_file)
+        else:
+            raise NotImplementedError("File size is too large")
 
-    def add_index(self, add_paths: list[str]):
+    def to_blob(self, file: File) -> Result:
+        hash = self.hash(file)
+        compressed = self.compress(file)
+        blob = Blob(object_id=hash, data=compressed, size=file.size, created_at=datetime.now())
+        return Result.Ok(blob)
+    
+    def add_index(self, paths: list[str]):
         current_dir = Path.cwd()
+        # TODO: 현재 경로가 리포지터리 경로인지 체크하는 로직 command 로 이동
         repo_dir = self.path.get_repo_dir(current_dir)
         if repo_dir is None:
             return Result.Fail("Not in a repository")
         
-        matched_paths: list[Path] = []
-        for path in add_paths:
-            found_paths = self.worktree.find_paths(path, current_dir)
-            if len(found_paths) == 0:
+        matched_files: list[File] = []
+        for path in paths:
+            files = self.worktree.find_files(path, current_dir)
+            if len(files) == 0:
                 return Result.Fail(f"Pathspec {path} did not match any files")
-            matched_paths.extend(found_paths)
+            matched_files.extend(files)
 
-        blobs: list[Blob] = []
-        for path in matched_paths:
-            result = self.to_blob(path)
-            if result.failed:
-                return result
-            blobs.append(result.value)
+        indexEntries = [file.to_index_entry(self.hash(file)) for file in matched_files]
+        result = self.index_store.save(indexEntries)
+        created_entry_paths = [entry.file_path for entry in result.value]
 
-        self.db.create_blobs(blobs)
+        blobs = [self.to_blob(file) for file in matched_files if file in created_entry_paths] 
+        result = self.blob_store.save(blobs)
 
         return Result.Ok(None)

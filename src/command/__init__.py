@@ -17,4 +17,4 @@ class Command(Protocol):
         ...
 
 
-__all__ = ['Command', 'Add', 'Branch', 'Init'] 
+__all__ = [Command, Add, Branch, Init] 
