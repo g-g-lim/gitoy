@@ -50,7 +50,8 @@ def sqlite(repository_path):
 
     yield sqlite
 
-    sqlite.truncate_all()
+    if sqlite.path is not None and sqlite.path.exists():
+        sqlite.truncate_all()
 
 
 @pytest.fixture(scope="function")  

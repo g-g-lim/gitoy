@@ -300,6 +300,6 @@ class TestRepositoryCompress:
         assert len(compressed) > len(test_data)
 
     def test_compress_large_file(self, repository: Repository, test_large_file: File):
-        bytes = test_large_file.read_body()
-        compressed = repository.compress(bytes)
-        assert len(compressed) < len(bytes)
+        body = test_large_file.read_body()
+        compressed = repository.compress(test_large_file)
+        assert len(compressed) < len(body)

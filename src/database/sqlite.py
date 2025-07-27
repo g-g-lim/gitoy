@@ -16,8 +16,6 @@ class SQLite:
         if self.path is None:
             raise ValueError("Path is not set")
 
-        print(self.path.absolute())
-
         self.conn = sqlite3.connect(self.path.absolute())
         self.cursor = self.conn.cursor()
         self.conn.execute("PRAGMA journal_mode = WAL")
