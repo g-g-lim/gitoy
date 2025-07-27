@@ -10,6 +10,8 @@ import tempfile
 from unittest.mock import patch
 import sys
 
+from database.entity.index_entry import IndexEntry
+
 
 from src.database.entity.blob import Blob
 from src.database.sqlite import SQLite
@@ -125,15 +127,15 @@ class TestRepositoryBranch:
         assert result.error == "Branch refs/heads/main is the head branch"
 
 
-class TestRepositoryAddToIndex:
+class TestRepositoryAddIndex:
     """Test cases for Repository add to index."""
 
-    def test_add_to_index_with_not_in_repository(self, repository: Repository):
+    def test_add_index_with_not_in_repository(self, repository: Repository):
         result = repository.add_index(["test_file"])
         assert result.success is False
         assert result.error == "Not in a repository"
 
-    def test_add_to_index_with_not_exists_file(self, repository: Repository, test_directory: Path):
+    def test_add_index_with_not_exists_file(self, repository: Repository, test_directory: Path):
         repository.init()
 
         with patch('pathlib.Path.cwd') as mock_cwd:
@@ -143,7 +145,7 @@ class TestRepositoryAddToIndex:
             assert result.success is False
             assert result.error == "Pathspec temp_file did not match any files"
 
-    def test_add_to_index_with_one_file(self, sqlite: SQLite, repository: Repository, test_file: File):
+    def test_add_index_with_one_file(self, sqlite: SQLite, repository: Repository, test_file: File):
         repository.init()
 
         with patch('pathlib.Path.cwd') as mock_cwd:            
@@ -153,6 +155,26 @@ class TestRepositoryAddToIndex:
 
             assert result.success is True
 
+            hash = repository.hash(test_file)
+            test_file_entry = test_file.to_index_entry(hash)
+
+            entry_from_db = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
+            assert len(entry_from_db) == 1
+            assert entry_from_db[0]["object_id"] == hash
+            assert entry_from_db[0]["file_path"] == test_file_entry.file_path
+            assert entry_from_db[0]["file_mode"] == test_file_entry.file_mode
+            assert entry_from_db[0]["file_size"] == test_file_entry.file_size
+            assert entry_from_db[0]["ctime"] == test_file_entry.ctime
+            assert entry_from_db[0]["mtime"] == test_file_entry.mtime
+            assert entry_from_db[0]["dev"] == test_file_entry.dev
+            assert entry_from_db[0]["inode"] == test_file_entry.inode
+            assert entry_from_db[0]["uid"] == test_file_entry.uid
+            assert entry_from_db[0]["gid"] == test_file_entry.gid
+            assert entry_from_db[0]["stage"] == test_file_entry.stage
+            assert entry_from_db[0]["assume_valid"] == test_file_entry.assume_valid
+            assert entry_from_db[0]["skip_worktree"] == test_file_entry.skip_worktree
+            assert entry_from_db[0]["intent_to_add"] == test_file_entry.intent_to_add
+
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 1
             assert blobs[0]["object_id"] == repository.hash(test_file)
@@ -161,7 +183,7 @@ class TestRepositoryAddToIndex:
             assert blobs[0]['data'] == compressed
             assert blobs[0]['size'] == test_file.size
 
-    def test_add_to_index_with_multiple_same_files(self, sqlite: SQLite, repository: Repository, test_directory: Path):
+    def test_add_index_with_multiple_same_files(self, sqlite: SQLite, repository: Repository, test_directory: Path):
         repository.init()
 
         with patch('pathlib.Path.cwd') as mock_cwd:
@@ -172,10 +194,13 @@ class TestRepositoryAddToIndex:
 
             assert result.success is True
 
+            entries = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
+            assert len(entries) == 2
+
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 1
         
-    def test_add_to_index_with_multiple_files(self, sqlite: SQLite, repository: Repository, test_directory: Path):
+    def test_add_index_with_multiple_files(self, sqlite: SQLite, repository: Repository, test_directory: Path):
         repository.init()
         
         with patch('pathlib.Path.cwd') as mock_cwd:
@@ -186,6 +211,9 @@ class TestRepositoryAddToIndex:
             result = repository.add_index([Path(path1).name, Path(path2).name])
 
             assert result.success is True
+
+            entries = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
+            assert len(entries) == 2
 
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 2
@@ -200,6 +228,10 @@ class TestRepositoryAddToIndex:
             compressed = repository.compress(test_large_file)
 
             assert result.success is True
+
+            entries = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
+            assert len(entries) == 1
+            assert entries[0]['file_size'] == test_large_file.size
 
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 1
