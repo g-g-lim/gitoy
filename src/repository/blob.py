@@ -1,6 +1,7 @@
 
 from database.database import Database
 from database.entity.blob import Blob
+from util.array import unique
 from util.result import Result
 
 
@@ -10,6 +11,7 @@ class BlobStore:
         self.database = database
 
     def save(self, blobs: list[Blob]) -> Result:
+        blobs = list(unique(blobs, 'object_id'))
         existing_blobs = self.database.list_blobs_by_ids([blob.object_id for blob in blobs])
         existing_blob_ids = [blob.object_id for blob in existing_blobs]
         should_create_blobs = [blob for blob in blobs if blob.object_id not in existing_blob_ids]

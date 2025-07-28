@@ -41,6 +41,10 @@ class IndexEntry(Entity):
     intent_to_add: bool 
 
     @staticmethod
+    def primary_key_column():
+        return "file_path"
+
+    @staticmethod
     def table_name():
         return "index_entry"
 

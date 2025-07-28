@@ -25,6 +25,9 @@ class Blob(Entity):
     encoding: Optional[str] = None
     mime_type: Optional[str] = None 
 
+    @staticmethod
+    def primary_key_column():
+        return "object_id"
 
     @staticmethod
     def table_name():

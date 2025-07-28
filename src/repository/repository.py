@@ -2,6 +2,7 @@ from datetime import datetime
 from pathlib import Path
 from repository.blob import BlobStore
 from repository.index import IndexStore
+from util.array import unique
 from util.file import File
 from .path import RepositoryPath
 from database.database import Database
@@ -116,13 +117,7 @@ class Repository:
         blob = Blob(object_id=hash, data=compressed, size=file.size, created_at=datetime.now())
         return blob
     
-    def add_index(self, paths: list[str]):
-        current_dir = Path.cwd()
-        # TODO: 현재 경로가 리포지터리 경로인지 체크하는 로직 command 로 이동
-        repo_dir = self.path.get_repo_dir(current_dir)
-        if repo_dir is None:
-            return Result.Fail("Not in a repository")
-        
+    def match_paths(self, paths: list[str], current_dir: Path):
         matched_files: list[File] = []
         for path in paths:
             files = self.worktree.find_files(path, current_dir)
@@ -130,14 +125,30 @@ class Repository:
                 return Result.Fail(f"Pathspec {path} did not match any files")
             matched_files.extend(files)
 
+        matched_files = list(unique(matched_files, 'relative_path_posix'))
+        return Result.Ok(matched_files)
+    
+    def add_index(self, paths: list[str]):
+        current_dir = Path.cwd()
+        # TODO: 현재 경로가 리포지터리 경로인지 체크하는 로직 command 로 이동
+        repo_dir = self.path.get_repo_dir(current_dir)
+        if repo_dir is None:
+            return Result.Fail("Not in a repository")
+
+        result = self.match_paths(paths, current_dir)
+        if result.failed:
+            return result
+
+        matched_files = result.value
+
         index_entries = [file.to_index_entry(self.hash(file)) for file in matched_files]
         result = self.index_store.save(index_entries)
         created_entry_paths = [entry.file_path for entry in result.value]
 
-        blobs = [self.to_blob(file) for file in matched_files if file.relative_path.as_posix() in created_entry_paths] 
+        blobs = [self.to_blob(file) for file in matched_files if file.relative_path_posix in created_entry_paths] 
         if len(blobs) == 0:
             return Result.Ok(None)
-        
-        result = self.blob_store.save(blobs)
+
+        self.blob_store.save(blobs)
 
         return Result.Ok(None)

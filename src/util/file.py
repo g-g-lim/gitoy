@@ -32,6 +32,10 @@ class File:
     @property
     def relative_path(self) -> Path:
         return self.path.relative_to(self.root_dir)
+    
+    @property
+    def relative_path_posix(self) -> str:
+        return self.relative_path.as_posix()
 
     @property
     def exists(self):
@@ -53,7 +57,7 @@ class File:
         stat = self.stat()
         entry = IndexEntry(
             object_id=object_id,
-            file_path=self.relative_path.as_posix(),
+            file_path=self.relative_path_posix,
             file_mode=oct(stat.st_mode), 
             file_size= stat.st_size,
             ctime=stat.st_ctime,

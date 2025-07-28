@@ -128,7 +128,7 @@ class TestRepositoryBranch:
 
 
 class TestRepositoryAddIndex:
-    """Test cases for Repository add to index."""
+    """Test cases for Repository add index"""
 
     def test_add_index_with_not_in_repository(self, repository: Repository):
         result = repository.add_index(["test_file"])
@@ -183,22 +183,24 @@ class TestRepositoryAddIndex:
             assert blobs[0]['data'] == compressed
             assert blobs[0]['size'] == test_file.size
 
-    def test_add_index_with_multiple_same_files(self, sqlite: SQLite, repository: Repository, test_directory: Path):
+    def test_add_index_with_same_content_multiple_files(self, sqlite: SQLite, repository: Repository, test_directory: Path):
         repository.init()
 
         with patch('pathlib.Path.cwd') as mock_cwd:
             mock_cwd.return_value = test_directory
             _, path1 = tempfile.mkstemp(dir=test_directory)
             _, path2 = tempfile.mkstemp(dir=test_directory)
-            result = repository.add_index([Path(path1).name, Path(path2).name])
 
+            result = repository.add_index([Path(path1).name, Path(path2).name])
             assert result.success is True
 
             entries = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
             assert len(entries) == 2
+            assert entries[0]['object_id'] == entries[1]['object_id']
 
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 1
+            assert entries[0]['object_id'] == blobs[0]['object_id']
         
     def test_add_index_with_multiple_files(self, sqlite: SQLite, repository: Repository, test_directory: Path):
         repository.init()
@@ -208,8 +210,8 @@ class TestRepositoryAddIndex:
             _, path1 = tempfile.mkstemp(dir=test_directory)
             _, path2 = tempfile.mkstemp(dir=test_directory)
             Path(path2).write_bytes(b"append_data")
-            result = repository.add_index([Path(path1).name, Path(path2).name])
 
+            result = repository.add_index([Path(path1).name, Path(path2).name])
             assert result.success is True
 
             entries = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
@@ -218,7 +220,7 @@ class TestRepositoryAddIndex:
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 2
         
-    def test_add_to_index_with_large_file(self, sqlite: SQLite, repository: Repository, test_directory: Path, test_large_file: File):    
+    def test_add_index_with_large_file(self, sqlite: SQLite, repository: Repository, test_directory: Path, test_large_file: File):    
         repository.init()
 
         with patch('pathlib.Path.cwd') as mock_cwd:
@@ -238,6 +240,91 @@ class TestRepositoryAddIndex:
             assert blobs[0]["object_id"] == repository.hash(test_large_file)
             assert blobs[0]['data'] == compressed
             assert blobs[0]['size'] == test_large_file.stat().st_size
+    
+    def test_add_index_when_update_file_index_entry_replacement(self, sqlite: SQLite, repository: Repository, test_directory: Path):
+        repository.init()
+        
+        with patch('pathlib.Path.cwd') as mock_cwd:
+            mock_cwd.return_value = test_directory
+            _, path = tempfile.mkstemp(dir=test_directory)
+            path = Path(path)
+            repository.add_index([path.name])
+
+            entries = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
+            assert len(entries) == 1
+
+            blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
+            assert len(blobs) == 1
+            assert entries[0]['object_id'] == blobs[0]['object_id']
+
+            path.write_bytes(b"update data")
+            result = repository.add_index([path.name])
+
+            assert result.success is True
+
+            entries = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
+            assert len(entries) == 1
+
+            blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()} ORDER BY created_at ASC")
+            assert len(blobs) == 2
+            assert entries[0]['object_id'] == blobs[1]['object_id']
+    
+    def test_add_index_when_add_new_and_update_file(self, sqlite: SQLite, repository: Repository, test_directory: Path):
+        repository.init()
+        
+        with patch('pathlib.Path.cwd') as mock_cwd:
+            mock_cwd.return_value = test_directory
+            _, path = tempfile.mkstemp(dir=test_directory)
+            path = Path(path)
+            repository.add_index([path.name])
+
+            path.write_bytes(b"update file")
+            _, path2 = tempfile.mkstemp(dir=test_directory)
+            path2 = Path(path2)
+            path2.write_bytes(b"new file")
+            result = repository.add_index([path.name, path2.name])
+
+            assert result.success is True
+
+            entries = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
+            assert len(entries) == 2
+
+            blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
+            assert len(blobs) == 3
+
+    def test_add_index_when_add_completed_same_file(self, sqlite: SQLite, repository: Repository, test_directory: Path):
+        repository.init()
+        
+        with patch('pathlib.Path.cwd') as mock_cwd:
+            mock_cwd.return_value = test_directory
+            _, path = tempfile.mkstemp(dir=test_directory)
+            path = Path(path)
+
+            repository.add_index([path.name])
+            repository.add_index([path.name])
+
+            entries = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
+            assert len(entries) == 1
+
+            blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
+            assert len(blobs) == 1
+
+    def test_add_index_duplicate_paths_in_single_call(self, sqlite: SQLite, repository: Repository, test_directory: Path):
+        repository.init()
+        
+        with patch('pathlib.Path.cwd') as mock_cwd:
+            mock_cwd.return_value = test_directory
+            _, path = tempfile.mkstemp(dir=test_directory)
+            path = Path(path)
+
+            repository.add_index([path.name, path.name])
+
+            entries = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
+            assert len(entries) == 1
+
+            blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
+            assert len(blobs) == 1
+
 
 class TestRepositoryHash:
     """Test cases for Repository hash file."""
