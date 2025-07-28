@@ -6,8 +6,8 @@ Gitoy CLI - A simple File Version Control CLI tool built with Python Fire
 import fire
 import sys
 
-from repository.blob import BlobStore
-from repository.index import IndexStore
+from repository.blob_store import BlobStore
+from repository.index_store import IndexStore
 from repository.repository import Repository
 from command.init import Init
 from database.database import Database

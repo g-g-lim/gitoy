@@ -9,8 +9,8 @@ import tempfile
 from src.util.file import File
 import zstandard
 
-from src.repository.blob import BlobStore
-from src.repository.index import IndexStore
+from repository.blob_store import BlobStore
+from repository.index_store import IndexStore
 from src.database.sqlite import SQLite
 from src.util.hash_algo import Sha1
 from src.repository.worktree import Worktree

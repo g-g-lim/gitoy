@@ -1,7 +1,7 @@
 from .repository import Repository
 from .path import RepositoryPath
 from .worktree import Worktree
-from .blob import BlobStore
-from .index import IndexStore
+from .blob_store import BlobStore
+from .index_store import IndexStore
 
 __all__ = [Repository, RepositoryPath, Worktree, BlobStore, IndexStore] 
