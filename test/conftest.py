@@ -18,30 +18,29 @@ from src.repository.path import RepositoryPath
 from src.database.database import Database
 from src.repository.repository import Repository
 
-
-src_path = Path(__file__).parent.parent / "src"
+root_path = Path(__file__).parent.parent
+src_path = root_path / "src"
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
-
+TEST_GITOY_DIR = ".gitoy_test"
 
 @pytest.fixture(scope="session")
 def test_root_directory():
     """
     The root directory of the test suite.
-    project_root/test/
+    project_root/
     """
-    return Path(__file__).parent
+    return root_path
 
 
 @pytest.fixture(scope="function")
 def repository_path(test_root_directory):
-    repository_path = RepositoryPath(test_root_directory)
-    repo_dir = repository_path.create_repo_dir()
+    repository_path = RepositoryPath(test_root_directory, TEST_GITOY_DIR)
     
     yield repository_path
 
-    if repo_dir is not None:
+    if repository_path.repo_dir is not None:
         shutil.rmtree(repository_path.repo_dir)
 
 
@@ -110,9 +109,9 @@ def repository(
 @pytest.fixture(scope="function")
 def test_directory(test_root_directory):
     """
-    project_root/test/test_directory
+    project_root/test_dir
     """
-    directory = test_root_directory / "test_directory"
+    directory = test_root_directory / "test_dir"
     directory.mkdir(parents=True, exist_ok=True)
 
     yield directory
@@ -124,7 +123,7 @@ def test_directory(test_root_directory):
 @pytest.fixture(scope="function")
 def test_file_path(test_directory):
     """ 
-    project_root/test/test_directory/test_file
+    project_root/test_dir/test_file
     """
     _, path = tempfile.mkstemp(dir=test_directory)
     path = Path(path)

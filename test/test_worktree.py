@@ -7,6 +7,8 @@ from pathlib import Path
 import sys
 import tempfile
 
+from repository.repository import Repository
+
 from src.repository.worktree import Worktree
 from src.util.file import File
 
@@ -19,18 +21,24 @@ if str(src_path) not in sys.path:
 class TestWorktreeFindPaths:
     """Test cases for Repository add method."""
 
-    def test_find_paths_with_normal_file(self, worktree: Worktree, test_file: File):        
+    def test_find_paths_with_normal_file(self, repository: Repository, worktree: Worktree, test_file: File):
+        repository.init()
+
         result = worktree.find_files(test_file.path.name, test_file.path.parent)
         assert len(result) == 1
         assert result[0].path.name == test_file.path.name
         assert result[0].path.is_file()
         assert result[0].path.is_absolute()
 
-    def test_find_paths_with_not_exists_file(self, worktree: Worktree):
+    def test_find_paths_with_not_exists_file(self, repository: Repository, worktree: Worktree):
+        repository.init()
+
         result = worktree.find_files('testfile')
         assert len(result) == 0
 
-    def test_find_paths_with_file_in_directory(self, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+    def test_find_paths_with_file_in_directory(self, repository: Repository, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+        repository.init()
+
         _, path = tempfile.mkstemp(dir=test_directory)
         result = worktree.find_files('./' + test_directory.name, test_root_directory)
         assert result is not None
@@ -57,7 +65,9 @@ class TestWorktreeFindPaths:
         for file in result:
             assert file.path.name in [(test_directory / Path(path)).name, (test_directory / Path(path2)).name]
 
-    def test_find_paths_with_no_file_in_directory_path(self, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+    def test_find_paths_with_no_file_in_directory_path(self, repository: Repository, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+        repository.init()
+
         result = worktree.find_files(test_directory.name, test_root_directory)
         assert len(result) == 0
 
@@ -70,7 +80,9 @@ class TestWorktreeFindPaths:
         result = worktree.find_files(test_directory.name + '/', test_root_directory)
         assert len(result) == 0
 
-    def test_find_paths_with_subdirectory(self, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+    def test_find_paths_with_subdirectory(self, repository: Repository, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+        repository.init()
+        
         subdir = test_directory / "subdir"
         subdir.mkdir(parents=True, exist_ok=True)
         result = worktree.find_files(test_directory.name, test_root_directory)
@@ -98,7 +110,9 @@ class TestWorktreeFindPaths:
         for file in result:
             assert file.path.name in [file_subdir.name, file2_subdir.name]
 
-    def test_file_paths_with_dot_path(self, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+    def test_file_paths_with_dot_path(self, repository: Repository, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+        repository.init()
+
         _, path = tempfile.mkstemp(dir=test_directory)
 
         # test/test_directory/test_file
@@ -137,7 +151,9 @@ class TestWorktreeFindPaths:
         result = worktree.find_files('.', test_directory)
         assert len(result) == 2
 
-    def test_file_paths_with_parent_dot_path(self, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+    def test_file_paths_with_parent_dot_path(self, repository: Repository, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+        repository.init()
+
         # test/test_directory/subdir/testfile
         subdir = test_directory / "subdir"
         subdir.mkdir(parents=True, exist_ok=True)

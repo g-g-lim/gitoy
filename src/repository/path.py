@@ -7,14 +7,15 @@ from util.constant import GITOY_DB_FILE, GITOY_DIR
 
 class RepositoryPath:
 
-    def __init__(self, cwd: Optional[Path] = None):
+    def __init__(self, cwd: Optional[Path] = None, repo_dir_name = GITOY_DIR):
         self.cwd = cwd or Path(os.getcwd())
+        self.repo_dir_name = repo_dir_name
         self.repo_dir = self.get_repo_dir()
 
     def get_repo_dir(self, cwd: Optional[Path] = None) -> Optional[Path]:
         current_path = cwd or self.cwd
         while True:
-            repo_dir = current_path / GITOY_DIR
+            repo_dir = current_path / self.repo_dir_name
             if repo_dir.exists() and repo_dir.is_dir():
                 return repo_dir
             if current_path.parent == current_path:
@@ -32,9 +33,9 @@ class RepositoryPath:
         if self.repo_dir is not None:
             return self.repo_dir
         
-        self.repo_dir = self.cwd / GITOY_DIR
+        self.repo_dir = self.cwd / self.repo_dir_name
         self.repo_dir.mkdir(parents=True, exist_ok=True)
         return self.repo_dir
     
     def create_repo_db_path(self):
-        return Path(self.cwd, GITOY_DIR, GITOY_DB_FILE)
+        return Path(self.cwd, self.repo_dir_name, GITOY_DB_FILE)
