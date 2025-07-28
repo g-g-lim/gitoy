@@ -1,6 +1,5 @@
 from repository.repository import Repository
 from util.console import Console
-from util.constant import INITIALIZED_MESSAGE, REPOSITORY_ALREADY_INITIALIZED
 
 
 class Init:
@@ -16,7 +15,7 @@ class Init:
     def __call__(self):
         is_initialized = self._repository.is_initialized()
         if is_initialized:
-            self._console.info(REPOSITORY_ALREADY_INITIALIZED)
+            self._console.info('Gitoy Repository already initialized')
         else:
             repo_dir = self._repository.init()
-            self._console.success(INITIALIZED_MESSAGE(repo_dir.absolute()))
+            self._console.success(f'Gitoy Repository initialized at {repo_dir.absolute()}')
