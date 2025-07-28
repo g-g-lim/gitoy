@@ -15,7 +15,7 @@ class SQLite:
     def connect(self):
         if self.path is None:
             raise ValueError("Path is not set")
-
+                
         self.conn = sqlite3.connect(self.path.absolute())
         self.cursor = self.conn.cursor()
         self.conn.execute("PRAGMA journal_mode = WAL")
@@ -76,7 +76,6 @@ class SQLite:
             [getattr(entity, col) for col in columns]
             for entity in entities
         ]
-        
         cursor.executemany(sql, values_list)
         conn.commit()
 

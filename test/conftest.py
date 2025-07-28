@@ -23,6 +23,7 @@ src_path = root_path / "src"
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
+
 TEST_GITOY_DIR = ".gitoy_test"
 
 @pytest.fixture(scope="session")
@@ -31,7 +32,7 @@ def test_root_directory():
     The root directory of the test suite.
     project_root/
     """
-    return root_path
+    return root_path / 'test'
 
 
 @pytest.fixture(scope="function")
