@@ -12,5 +12,7 @@ class Add:
         self._console = console
 
     def __call__(self, *paths: str):
-        self._repository.add_index(list(paths))
+        result = self._repository.add_index(list(paths))
+        if result.failed:
+            self._console.error(result.error)
     

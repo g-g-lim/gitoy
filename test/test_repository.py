@@ -219,7 +219,26 @@ class TestRepositoryAddIndex:
 
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 2
-        
+
+    def test_add_index_with_mutiple_files_in_directory(self, sqlite: SQLite, repository: Repository, test_directory: Path):
+        repository.init()   
+    
+        with patch('pathlib.Path.cwd') as mock_cwd:
+            mock_cwd.return_value = test_directory.parent
+            _, path1 = tempfile.mkstemp(dir=test_directory)
+            Path(path1).write_bytes(b"path1 data")
+            _, path2 = tempfile.mkstemp(dir=test_directory)
+            Path(path2).write_bytes(b"path2 data")
+
+            result = repository.add_index([test_directory.name])
+            assert result.success is True
+
+            entries = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
+            assert len(entries) == 2
+
+            blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
+            assert len(blobs) == 2
+
     def test_add_index_with_large_file(self, sqlite: SQLite, repository: Repository, test_directory: Path, test_large_file: File):    
         repository.init()
 
