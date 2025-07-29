@@ -12,14 +12,14 @@ class TestRepositoryPath:
         # /{absolute_path}/gitoy-2/test/test_dir/tmp3d909r0g
         repository_path.create_repo_dir()
         relative_path = repository_path.to_relative_path(test_file.path.absolute())
-        assert relative_path == test_file.relative_path
+        assert relative_path == test_file.path.relative_to(repository_path.worktree_path)
         assert relative_path.is_absolute() is False
 
     def test_absolute_path_to_relative_path_2(self, repository_path: RepositoryPath, test_directory: Path):
         # /{absolute_path}/gitoy-2/test/test_dir/tmp3d909r0g
         repository_path.create_repo_dir()
         relative_path = repository_path.to_relative_path(test_directory.absolute())
-        assert relative_path == Path(test_directory.name)
+        assert relative_path == test_directory.relative_to(repository_path.worktree_path)
         assert relative_path.is_absolute() is False
 
     def test_invalid_path(self, repository_path: RepositoryPath):
@@ -31,7 +31,7 @@ class TestRepositoryPath:
 
         with patch('os.getcwd', return_value=test_directory.as_posix()):
             relative_path = repository_path.to_relative_path(test_file.path.name)
-            assert relative_path == test_file.relative_path
+            assert relative_path == test_file.path.relative_to(repository_path.worktree_path)
 
     def test_relative_path_to_relative_path_2(self, repository_path: RepositoryPath, test_directory: Path):
         # path: ./ current_dir: test/test_dir

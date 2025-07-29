@@ -48,13 +48,16 @@ class RepositoryPath:
     def create_repo_db_path(self):
         return Path(self.cwd, self.repo_dir_name, GITOY_DB_FILE)
     
-    def to_relative_path(self, path: str | Path):
+    def to_relative_path(self, path: str | Path) -> Path:
         if (isinstance(path, str)):
-            path = Path(path)        
+            path = Path(path)
         return path.resolve().relative_to(self.worktree_path)
 
     def to_relative_paths(self, paths: list[str | Path]):
         return [self.to_relative_path(path) for path in paths]
 
+    def to_normalized_relative_path(self, path: str | Path) -> Path:
+        return normalize_path(self.to_relative_path(path).as_posix())
+
     def to_normalized_relative_paths(self, paths: list[str | Path]):
-        return [normalize_path(self.to_relative_path(path).as_posix()) for path in paths]
+        return [self.to_normalized_relative_path(path) for path in paths]

@@ -5,9 +5,8 @@ from database.entity.index_entry import IndexEntry
 
 class File:
 
-    def __init__(self, path: Path, root_dir: Path):
+    def __init__(self, path: Path):
         self.path = path
-        self.root_dir = root_dir
 
     @staticmethod
     def small_size_treshold():
@@ -18,31 +17,16 @@ class File:
         return 512 * 1024 * 1024
     
     @property
+    def size(self):
+        return self.path.stat().st_size
+    
+    @property
     def is_small(self):
         return self.size <= self.small_size_treshold()
     
     @property
     def is_mid(self):
         return self.size <= self.mid_size_treshold()
-    
-    @property
-    def size(self):
-        return self.stat().st_size
-    
-    @property
-    def relative_path(self) -> Path:
-        return self.path.relative_to(self.root_dir)
-    
-    @property
-    def relative_path_posix(self) -> str:
-        return self.relative_path.as_posix()
-
-    @property
-    def exists(self):
-        return self.path.exists()
-    
-    def stat( self):
-        return self.path.lstat()
     
     def read_body(self):
         if self.is_small:
@@ -54,10 +38,10 @@ class File:
             raise NotImplementedError("File size is too large")
     
     def to_index_entry(self, object_id: str) -> IndexEntry:
-        stat = self.stat()
+        stat = self.path.lstat()
         entry = IndexEntry(
             object_id=object_id,
-            file_path=self.relative_path_posix,
+            file_path=self.path.as_posix(),
             file_mode=oct(stat.st_mode), 
             file_size= stat.st_size,
             ctime=stat.st_ctime,

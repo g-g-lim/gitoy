@@ -1,5 +1,4 @@
 from datetime import datetime
-from pathlib import Path
 from repository.blob_store import BlobStore
 from repository.index_store import IndexStore
 from util.array import unique
@@ -117,25 +116,19 @@ class Repository:
         blob = Blob(object_id=hash, data=compressed, size=file.size, created_at=datetime.now())
         return blob
     
-    def match_paths(self, paths: list[str], current_dir: Path):
+    def match_paths(self, paths: list[str]):
         matched_files: list[File] = []
         for path in paths:
-            files = self.worktree.find_files(path, current_dir)
+            files = self.worktree.find_files(path)
             if len(files) == 0:
                 return Result.Fail(f"Pathspec {path} did not match any files")
             matched_files.extend(files)
 
         matched_files = list(unique(matched_files, 'relative_path_posix'))
         return Result.Ok(matched_files)
-    
-    def add_index(self, paths: list[str]):
-        current_dir = Path.cwd()
-        # TODO: 현재 경로가 리포지터리 경로인지 체크하는 로직 command 로 이동
-        repo_dir = self.path.get_repo_dir(current_dir)
-        if repo_dir is None:
-            return Result.Fail("Not in a repository")
 
-        result = self.match_paths(paths, current_dir)
+    def add_index(self, paths: list[str]):
+        result = self.match_paths(paths)
         if result.failed:
             return result
 

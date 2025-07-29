@@ -136,8 +136,8 @@ def test_file_path(test_directory):
 
 
 @pytest.fixture(scope="function")   
-def test_file(test_file_path, test_root_directory):
-    yield File(test_file_path, test_root_directory)
+def test_file(test_file_path):
+    yield File(test_file_path)
 
     
 @pytest.fixture(scope="function")
@@ -153,8 +153,8 @@ def test_large_file_path(test_directory):
 
 
 @pytest.fixture(scope="function")   
-def test_large_file(test_large_file_path, test_root_directory):
-    yield File(test_large_file_path, test_root_directory)
+def test_large_file(test_large_file_path):
+    yield File(test_large_file_path)
 
 
 @pytest.fixture(scope="function")
@@ -171,7 +171,7 @@ def test_image_file(test_directory):
         b"\x08\xd7c\xf8\x0f\x00\x01\x01\x01\x00\x18\xdd\x8d\x18"
         b"\x00\x00\x00\x00IEND\xaeB`\x82"
     )
-    yield File(image_file, test_directory)
+    yield File(image_file)
 
     if image_file.exists():
         image_file.unlink()

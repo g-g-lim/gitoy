@@ -14,9 +14,6 @@ def test_pathlib():
     current_dir = path.resolve().name  # 절대 경로로 변환 후 디렉토리명 추출
     assert current_dir == 'repository'
 
-    actual_path = Path.cwd() / path.resolve()  # 현재 디렉토리 기준으로 실제 경로 계산
-    assert actual_path.resolve().name == 'repository'
-
     cwd = Path.cwd()
     assert cwd.is_absolute()
     assert cwd.is_dir()
@@ -26,3 +23,8 @@ def test_pathlib():
 
     path = Path('./test.py')
     assert path.resolve() == cwd / 'test.py'
+
+    path = Path('test/util/test_pathlib.py')
+    assert path.resolve() == cwd / 'test/util/test_pathlib.py'
+    assert path.resolve().relative_to(cwd) == Path('test/util/test_pathlib.py')
+    assert path.resolve().relative_to(cwd).exists()

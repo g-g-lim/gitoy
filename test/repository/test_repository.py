@@ -258,7 +258,7 @@ class TestRepositoryAddIndex:
             assert len(blobs) == 1
             assert blobs[0]["object_id"] == repository.hash(test_large_file)
             assert blobs[0]['data'] == compressed
-            assert blobs[0]['size'] == test_large_file.stat().st_size
+            assert blobs[0]['size'] == test_large_file.size
     
     def test_add_index_when_update_file_index_entry_replacement(self, sqlite: SQLite, repository: Repository, test_directory: Path):
         repository.init()
@@ -365,10 +365,10 @@ class TestRepositoryHash:
         assert result == sha2.hexdigest()
         assert sha1.hexdigest() != sha2.hexdigest()
 
-    def test_hash_file_with_empty_file(self, repository: Repository, test_directory: Path):
+    def test_hash_file_with_empty_file(self, repository: Repository):
         _, path = tempfile.mkstemp()
         empty_file_path = Path(path)
-        file = File(empty_file_path, test_directory)
+        file = File(empty_file_path)
         result = repository.hash(file)
 
         sha1 = hashlib.sha1()
@@ -380,7 +380,7 @@ class TestRepositoryHash:
         _, path = tempfile.mkstemp()
         test_file2_path = Path(path)
         test_file2_path.write_bytes(test_file.read_body())
-        test_file2 = File(test_file2_path, test_file.path.parent)
+        test_file2 = File(test_file2_path)
 
         assert repository.hash(test_file) == repository.hash(test_file2)
     
@@ -397,7 +397,7 @@ class TestRepositoryHash:
         binary_file_path = Path(path)
         binary_file_path.write_bytes(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F")
 
-        file = File(binary_file_path, binary_file_path.parent)
+        file = File(binary_file_path)
 
         result = repository.hash(file)
 
