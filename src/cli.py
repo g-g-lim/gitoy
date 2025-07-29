@@ -16,7 +16,7 @@ from command.branch import Branch
 from command.add import Add
 from util.hash_algo import Sha1
 from repository.worktree import Worktree
-from repository.path import RepositoryPath
+from repository.repo_path import RepositoryPath
 from util.console import Console
 from command import Command
 import zstandard
@@ -64,7 +64,7 @@ def main():
     worktree = Worktree(repository_path)
     compressor = zstandard.ZstdCompressor()
     sha1 = Sha1()
-    index_store = IndexStore(database)
+    index_store = IndexStore(database, repository_path)
     blob_store = BlobStore(database)
     repository = Repository(
         database, 

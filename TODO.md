@@ -19,7 +19,10 @@ gitoy add 삭제 파일에 대한 처리
 
 - database 에서 add 로 전달한 경로와 매칭되는 entry 조회하기 -> ing
 - 조회한 entry 를 file 로 변환하기
+    - 변환하는건 생각해보면 필요없을 수도 있음
+    - index_entry 와 index_entry 를 비교하면 되기 때문
 - worktree 의 file 과 index 의 file을 비교하기
+    - file 을 index_entry 로 변환해야 함
 - 비교 로직을 처리하는 역할을 담당할 IndexDiff 객체 구현하기
     - IndexDiff 는 add pathspec 을 받아서 index_entry, worktree file 을 조회하고 비교하는 기능 수행
 - repository.add_index 에 diff 로직 반영하기

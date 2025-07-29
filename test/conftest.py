@@ -9,12 +9,12 @@ import tempfile
 from src.util.file import File
 import zstandard
 
-from repository.blob_store import BlobStore
-from repository.index_store import IndexStore
+from src.repository.blob_store import BlobStore
+from src.repository.index_store import IndexStore
 from src.database.sqlite import SQLite
 from src.util.hash_algo import Sha1
 from src.repository.worktree import Worktree
-from src.repository.path import RepositoryPath
+from src.repository.repo_path import RepositoryPath
 from src.database.database import Database
 from src.repository.repository import Repository
 
@@ -77,8 +77,8 @@ def compression():
 
 
 @pytest.fixture(scope="function")
-def index_store(database):
-    return IndexStore(database)
+def index_store(database, repository_path):
+    return IndexStore(database, repository_path)
 
 
 @pytest.fixture(scope="function")

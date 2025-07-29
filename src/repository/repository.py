@@ -4,7 +4,7 @@ from repository.blob_store import BlobStore
 from repository.index_store import IndexStore
 from util.array import unique
 from util.file import File
-from .path import RepositoryPath
+from .repo_path import RepositoryPath
 from database.database import Database
 from database.entity.blob import Blob
 from util.result import Result
@@ -139,7 +139,7 @@ class Repository:
         if result.failed:
             return result
 
-        matched_files = result.value
+        matched_files: list[File] = result.value
 
         index_entries = [file.to_index_entry(self.hash(file)) for file in matched_files]
         result = self.index_store.save(index_entries)

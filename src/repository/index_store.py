@@ -1,12 +1,14 @@
 from database.database import Database
 from database.entity.index_entry import IndexEntry
+from repository.repo_path import RepositoryPath
 from util.result import Result
 
 
 class IndexStore:
 
-    def __init__(self, database: Database):
+    def __init__(self, database: Database, repo_path: RepositoryPath):
         self.database = database
+        self.repo_path = repo_path
 
     def save(self, entries: list[IndexEntry]):
         paths = [entry.file_path for entry in entries]
@@ -36,3 +38,7 @@ class IndexStore:
             self.database.create_index_entries(create_entries)
 
         return Result.Ok(create_entries)
+    
+    def find_by_paths(self, paths: list[str]):
+        relative_paths = self.repo_path.to_normalized_relative_paths(paths)
+        return self.database.list_index_entries_by_paths_startwith(relative_paths)

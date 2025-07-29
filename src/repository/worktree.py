@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 from util.file import File
-from .path import RepositoryPath
+from .repo_path import RepositoryPath
 
 class Worktree:
     def __init__(self, repository_path: RepositoryPath):
@@ -10,11 +10,9 @@ class Worktree:
 
     @property
     def root_dir(self) -> Path:
-        repo_dir = self.repo_path.get_repo_dir()
-        if repo_dir is None:
-            raise ValueError("Repository directory not found")
-        return repo_dir.parent
+        return self.repo_path.worktree_path
 
+    # TODO: test for absolute path 
     def find_files(self, path: str, start_dir: Optional[Path] = None) -> list[File]:
         root_dir = self.root_dir
         start_dir = start_dir or Path.cwd()

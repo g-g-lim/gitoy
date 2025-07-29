@@ -3,6 +3,7 @@ from typing import Optional
 from pathlib import Path
 
 from util.constant import GITOY_DB_FILE, GITOY_DIR
+from util.path import normalize_path
 
 
 class RepositoryPath:
@@ -11,6 +12,13 @@ class RepositoryPath:
         self.cwd = cwd or Path(os.getcwd())
         self.repo_dir_name = repo_dir_name
         self.repo_dir = self.get_repo_dir()
+
+    @property
+    def worktree_path(self):
+        repo_dir = self.repo_dir
+        if repo_dir is None:
+            raise ValueError("Repository directory not found")
+        return repo_dir.parent
 
     def get_repo_dir(self, cwd: Optional[Path] = None) -> Optional[Path]:
         current_path = cwd or self.cwd
@@ -39,3 +47,14 @@ class RepositoryPath:
     
     def create_repo_db_path(self):
         return Path(self.cwd, self.repo_dir_name, GITOY_DB_FILE)
+    
+    def to_relative_path(self, path: str | Path):
+        if (isinstance(path, str)):
+            path = Path(path)        
+        return path.resolve().relative_to(self.worktree_path)
+
+    def to_relative_paths(self, paths: list[str | Path]):
+        return [self.to_relative_path(path) for path in paths]
+
+    def to_normalized_relative_paths(self, paths: list[str | Path]):
+        return [normalize_path(self.to_relative_path(path).as_posix()) for path in paths]
