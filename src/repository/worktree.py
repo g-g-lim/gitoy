@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from util.file import File
 from .repo_path import RepositoryPath
 
 class Worktree:
@@ -12,7 +11,7 @@ class Worktree:
         return self.repo_path.worktree_path
 
     # TODO: test for absolute path 
-    def find_paths(self, path: str) -> list[Path]:
+    def match(self, path: str) -> list[Path]:
         relative_path = self.repo_path.to_relative_path(path)
         path = self.root_dir / relative_path
         if (path.is_dir()):
@@ -22,7 +21,8 @@ class Worktree:
         else:
             return []
 
-    def find_files(self, path: str) -> list[File]:
-        return [File(p) for p in self.find_paths(path)]
+    # TODO: process duplicate paths
+    def find_paths(self, paths: list[str]) -> list[Path]:
+        return [p for path in paths for p in self.match(path)]
     
     

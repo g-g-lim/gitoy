@@ -1,8 +1,6 @@
 import mmap
 from pathlib import Path
 
-from database.entity.index_entry import IndexEntry
-
 class File:
 
     def __init__(self, path: Path):
@@ -36,23 +34,4 @@ class File:
                 return mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ)
         else: 
             raise NotImplementedError("File size is too large")
-    
-    def to_index_entry(self, object_id: str) -> IndexEntry:
-        stat = self.path.lstat()
-        entry = IndexEntry(
-            object_id=object_id,
-            file_path=self.path.as_posix(),
-            file_mode=oct(stat.st_mode), 
-            file_size= stat.st_size,
-            ctime=stat.st_ctime,
-            mtime=stat.st_mtime, 
-            dev=stat.st_dev, 
-            inode=stat.st_ino, 
-            uid=stat.st_uid, 
-            gid=stat.st_gid, 
-            stage=0, 
-            assume_valid= False, 
-            skip_worktree= False, 
-            intent_to_add= False
-        )
-        return entry
+        

@@ -73,5 +73,6 @@ class IndexEntry(Entity):
             and self.object_id == other.object_id
             and self.file_size == other.file_size
             and self.file_mode == other.file_mode
+            and self.mtime == other.mtime
         )
         

@@ -6,13 +6,16 @@ import pytest
 from pathlib import Path
 import sys
 import tempfile
+
+from repository.convert import Convert
+from repository.hash_file import HashFile
+from repository.index_diff import IndexDiff
 from src.util.file import File
 import zstandard
 
 from src.repository.blob_store import BlobStore
 from src.repository.index_store import IndexStore
 from src.database.sqlite import SQLite
-from src.util.hash_algo import Sha1
 from src.repository.worktree import Worktree
 from src.repository.repo_path import RepositoryPath
 from src.database.database import Database
@@ -67,8 +70,8 @@ def worktree(repository_path):
 
 
 @pytest.fixture(scope="function")
-def hash_algo():
-    return Sha1()
+def hash_file():
+    return HashFile()
 
 
 @pytest.fixture(scope="function")
@@ -82,6 +85,16 @@ def index_store(database, repository_path):
 
 
 @pytest.fixture(scope="function")
+def convert(hash_file, repository_path):
+    return Convert(hash_file, repository_path)
+
+
+@pytest.fixture(scope="function")
+def index_diff(index_store, worktree, convert):
+    return IndexDiff(index_store, worktree, convert)
+ 
+
+@pytest.fixture(scope="function")
 def blob_store(database):
     return BlobStore(database)
 
@@ -92,18 +105,20 @@ def repository(
     repository_path, 
     worktree, 
     compression, 
-    hash_algo, 
+    hash_file, 
     index_store, 
-    blob_store
+    blob_store,
+    convert
 ):
     return Repository(
         database, 
         repository_path, 
         worktree, 
         compression, 
-        hash_algo,
+        hash_file,
         index_store,
-        blob_store
+        blob_store,
+        convert
     )
 
 

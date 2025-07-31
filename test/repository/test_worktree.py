@@ -26,7 +26,7 @@ class TestWorktreeFindPaths:
         repository.init()
 
         with patch('os.getcwd', return_value=test_directory.as_posix()):
-            result = worktree.find_paths(test_file.path.name)
+            result = worktree.match(test_file.path.name)
             assert len(result) == 1
             assert result[0].name == test_file.path.name
             assert result[0].is_file()
@@ -36,7 +36,7 @@ class TestWorktreeFindPaths:
         repository.init()
 
         with patch('os.getcwd', return_value=test_root_directory.as_posix()):
-            result = worktree.find_paths('testfile')
+            result = worktree.match('testfile')
             assert len(result) == 0
 
     def test_find_paths_with_file_in_directory(self, repository: Repository, worktree: Worktree, test_directory: Path):
@@ -44,21 +44,21 @@ class TestWorktreeFindPaths:
 
         with patch('os.getcwd', return_value=test_directory.parent.as_posix()):
             _, path = tempfile.mkstemp(dir=test_directory)
-            result = worktree.find_paths('./' + test_directory.name)
+            result = worktree.match('./' + test_directory.name)
             assert len(result) == 1
             assert result[0].name == (test_directory / Path(path)).name
 
-            result = worktree.find_paths(test_directory.name + '/')
+            result = worktree.match(test_directory.name + '/')
             assert len(result) == 1
 
             _, path2 = tempfile.mkstemp(dir=test_directory)
-            result = worktree.find_paths(test_directory.name + '/')
+            result = worktree.match(test_directory.name + '/')
             assert len(result) == 2
 
-            result = worktree.find_paths(test_directory.name)
+            result = worktree.match(test_directory.name)
             assert len(result) == 2
 
-            result = worktree.find_paths(test_directory.name + '/' + Path(path2).name)
+            result = worktree.match(test_directory.name + '/' + Path(path2).name)
             assert len(result) == 1
             assert result[0].name == (test_directory / Path(path2)).name
 
@@ -66,16 +66,16 @@ class TestWorktreeFindPaths:
         repository.init()
 
         with patch('os.getcwd', return_value=test_root_directory.as_posix()):
-            result = worktree.find_paths(test_directory.name)
+            result = worktree.match(test_directory.name)
             assert len(result) == 0
 
-            result = worktree.find_paths('./' + test_directory.name)
+            result = worktree.match('./' + test_directory.name)
             assert len(result) == 0
 
-            result = worktree.find_paths(test_directory.name)
+            result = worktree.match(test_directory.name)
             assert len(result) == 0
 
-            result = worktree.find_paths(test_directory.name + '/')
+            result = worktree.match(test_directory.name + '/')
             assert len(result) == 0
 
     def test_find_paths_with_subdir(self, repository: Repository, worktree: Worktree, test_directory: Path, test_root_directory: Path):
@@ -84,27 +84,27 @@ class TestWorktreeFindPaths:
         subdir = test_directory / "subdir"
         subdir.mkdir(parents=True, exist_ok=True)
         with patch('os.getcwd', return_value=test_root_directory.as_posix()):
-            result = worktree.find_paths(test_directory.name)
+            result = worktree.match(test_directory.name)
             assert len(result) == 0
 
             file_subdir = subdir / "testfile"
             file_subdir.touch()
-            result = worktree.find_paths(test_directory.name)
+            result = worktree.match(test_directory.name)
             assert len(result) == 1
             assert result[0].name == file_subdir.name
 
-            result = worktree.find_paths(test_directory.name + '/' + subdir.name + '/' + 'testfile')
+            result = worktree.match(test_directory.name + '/' + subdir.name + '/' + 'testfile')
             assert len(result) == 1
             assert result[0].name == file_subdir.name
 
             file2_subdir = subdir / "testfile2"
             file2_subdir.touch()
-            result = worktree.find_paths(test_directory.name)
+            result = worktree.match(test_directory.name)
             assert len(result) == 2
             for path in result:
                 assert path.name in [file_subdir.name, file2_subdir.name]
 
-            result = worktree.find_paths(test_directory.name + '/' + subdir.name)
+            result = worktree.match(test_directory.name + '/' + subdir.name)
             assert len(result) == 2
             for path in result:
                 assert path.name in [file_subdir.name, file2_subdir.name]
@@ -116,12 +116,12 @@ class TestWorktreeFindPaths:
             _, path = tempfile.mkstemp(dir=test_directory)
 
             # test/test_directory/test_file
-            result = worktree.find_paths('.')
+            result = worktree.match('.')
             assert len(result) == 1
             assert result[0].is_file()
             assert result[0].name == (test_directory / Path(path)).name
 
-            result = worktree.find_paths('./')
+            result = worktree.match('./')
             assert len(result) == 1
             assert result[0].is_file()
             assert result[0].name == (test_directory / Path(path)).name
@@ -131,27 +131,27 @@ class TestWorktreeFindPaths:
         subdir.mkdir(parents=True, exist_ok=True)
 
         with patch('os.getcwd', return_value=subdir.as_posix()):
-            result = worktree.find_paths('.')
+            result = worktree.match('.')
             assert len(result) == 0
 
-            result = worktree.find_paths('./')
+            result = worktree.match('./')
             assert len(result) == 0
 
             # test/test_directory/subdir/testfile
             file_subdir = subdir / "testfile"
             file_subdir.touch()
 
-            result = worktree.find_paths('.')
+            result = worktree.match('.')
             assert len(result) == 1
             
-            result = worktree.find_paths('./')
+            result = worktree.match('./')
             assert len(result) == 1
             assert result[0].is_file()
             assert result[0].name == file_subdir.name
 
         with patch('os.getcwd', return_value=test_directory.as_posix()):
             # test/test_directory/
-            result = worktree.find_paths('.')
+            result = worktree.match('.')
             assert len(result) == 2
 
     def test_file_paths_with_parent_dot_path(self, repository: Repository, worktree: Worktree, test_directory: Path, test_root_directory: Path):
@@ -165,15 +165,15 @@ class TestWorktreeFindPaths:
             file_subdir = subdir / "testfile"
             file_subdir.touch()
 
-            result = worktree.find_paths('..')
+            result = worktree.match('..')
             assert len(result) == 1
 
             # test/test_directory/test_file
             _, path = tempfile.mkstemp(dir=test_directory)
-            result = worktree.find_paths('..')
+            result = worktree.match('..')
             assert len(result) == 2
             for path in result:
                 assert path.name in [file_subdir.name, (test_directory / Path(path)).name]
 
-            result = worktree.find_paths('../')
+            result = worktree.match('../')
             assert len(result) == 2

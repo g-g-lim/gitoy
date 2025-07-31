@@ -7,6 +7,8 @@ import fire
 import sys
 
 from repository.blob_store import BlobStore
+from repository.convert import Convert
+from repository.hash_file import HashFile
 from repository.index_store import IndexStore
 from repository.repository import Repository
 from command.init import Init
@@ -14,7 +16,6 @@ from database.database import Database
 from database.sqlite import SQLite
 from command.branch import Branch
 from command.add import Add
-from util.hash_algo import Sha1
 from repository.worktree import Worktree
 from repository.repo_path import RepositoryPath
 from util.console import Console
@@ -63,17 +64,19 @@ def main():
     database = Database(sqlite)
     worktree = Worktree(repository_path)
     compressor = zstandard.ZstdCompressor()
-    sha1 = Sha1()
     index_store = IndexStore(database, repository_path)
     blob_store = BlobStore(database)
+    hash_file = HashFile()
+    convert = Convert(hash_file)
     repository = Repository(
         database, 
         repository_path, 
         worktree, 
         compressor, 
-        sha1, 
+        hash_file,
         index_store, 
-        blob_store
+        blob_store,
+        convert
     )
     console = Console()
     commands= [
