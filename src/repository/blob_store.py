@@ -10,7 +10,10 @@ class BlobStore:
     def __init__(self, database: Database):
         self.database = database
 
-    def save(self, blobs: list[Blob]) -> Result:
+    def create(self, blobs: list[Blob]) -> Result:
+        if len(blobs) == 0:
+            return Result.Ok([])
+        
         blobs = list(unique(blobs, 'object_id'))
         existing_blobs = self.database.list_blobs_by_ids([blob.object_id for blob in blobs])
         existing_blob_ids = [blob.object_id for blob in existing_blobs]

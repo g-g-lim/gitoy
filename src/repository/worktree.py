@@ -23,7 +23,6 @@ class Worktree:
         else:
             return []
 
-    # TODO: process duplicate paths
     def find_paths(self, paths: list[str]) -> list[Path]:
         return list(unique([p for path in paths for p in self.match(path)], 'as_posix'))
     

@@ -5,7 +5,6 @@ from repository.convert import Convert
 from repository.index_diff import IndexDiff
 from repository.repo_path import RepositoryPath
 from repository.repository import Repository
-from util.file import File
 from unittest import mock
 
 class TestIndexDiff:
@@ -16,16 +15,16 @@ class TestIndexDiff:
         repository_path: RepositoryPath,
         index_diff: IndexDiff, 
         convert: Convert, 
-        test_file: File
+        test_file_path: Path
     ):
         repository.init()
 
         with mock.patch('os.getcwd', return_value=repository_path.worktree_path.as_posix()):
-            result = index_diff.diff([test_file.path.parent.name])
-            assert len(result['added']) == 1
-            assert result['added'][0] == convert.path_to_index_entry(test_file.path)
-            assert result['deleted'] == []
-            assert result['modified'] == []
+            result = index_diff.diff([test_file_path.parent.name])
+            assert len(result.added) == 1
+            assert result.added[0] == convert.path_to_index_entry(test_file_path)
+            assert result.deleted == []
+            assert result.modified == []
 
     def test_diff_deleted(
         self, 
@@ -46,10 +45,10 @@ class TestIndexDiff:
             path.unlink()
 
             result = index_diff.diff([_path])
-            assert result['added'] == []
-            assert len(result['deleted']) == 1
-            assert result['deleted'][0] == index_entry
-            assert result['modified'] == []
+            assert result.added == []
+            assert len(result.deleted) == 1
+            assert result.deleted[0] == index_entry
+            assert result.modified == []
 
     def test_diff_modified(
         self,
@@ -70,10 +69,10 @@ class TestIndexDiff:
             path.write_text('modified')
 
             result = index_diff.diff([_path])
-            assert result['added'] == []
-            assert result['deleted'] == []
-            assert len(result['modified']) == 1
-            assert result['modified'][0] == convert.path_to_index_entry(path)
+            assert result.added == []
+            assert result.deleted == []
+            assert len(result.modified) == 1
+            assert result.modified[0] == convert.path_to_index_entry(path)
 
     def test_diff_mixed(
         self,
@@ -95,18 +94,18 @@ class TestIndexDiff:
             _, _path2 = tempfile.mkstemp(dir=test_directory)
 
             result = index_diff.diff([_path, _path2])
-            assert len(result['added']) == 1
-            assert result['added'][0] == convert.path_to_index_entry(Path(_path2))
-            assert result['deleted'] == []
-            assert len(result['modified']) == 1
-            assert result['modified'][0] == convert.path_to_index_entry(path)
+            assert len(result.added) == 1
+            assert result.added[0] == convert.path_to_index_entry(Path(_path2))
+            assert result.deleted == []
+            assert len(result.modified) == 1
+            assert result.modified[0] == convert.path_to_index_entry(path)
 
             path.unlink()
 
             result = index_diff.diff([_path, _path2])
-            assert len(result['added']) == 1
-            assert len(result['deleted']) == 1
-            assert len(result['modified']) == 0
+            assert len(result.added) == 1
+            assert len(result.deleted) == 1
+            assert len(result.modified) == 0
 
             path2 = Path(_path2)
             index_entry2 = convert.path_to_index_entry(path2)
@@ -114,26 +113,26 @@ class TestIndexDiff:
             path2.write_text('modified')
 
             result = index_diff.diff([_path, _path2])
-            assert len(result['added']) == 0
-            assert len(result['deleted']) == 1
-            assert len(result['modified']) == 1
+            assert len(result.added) == 0
+            assert len(result.deleted) == 1
+            assert len(result.modified) == 1
 
             _, _path3 = tempfile.mkstemp(dir=test_directory)
 
             result = index_diff.diff([_path, _path2, _path3])
-            assert len(result['added']) == 1
-            assert len(result['deleted']) == 1
-            assert len(result['modified']) == 1
+            assert len(result.added) == 1
+            assert len(result.deleted) == 1
+            assert len(result.modified) == 1
 
             result = index_diff.diff([_path, _path2])
-            assert len(result['added']) == 0
-            assert len(result['deleted']) == 1
-            assert len(result['modified']) == 1
+            assert len(result.added) == 0
+            assert len(result.deleted) == 1
+            assert len(result.modified) == 1
 
             result = index_diff.diff([_path2, _path3])
-            assert len(result['added']) == 1
-            assert len(result['deleted']) == 0
-            assert len(result['modified']) == 1
+            assert len(result.added) == 1
+            assert len(result.deleted) == 0
+            assert len(result.modified) == 1
                 
     def test_diff_path_changed(
         self,
@@ -155,20 +154,20 @@ class TestIndexDiff:
             path.rename(renamed)
 
             result = index_diff.diff([renamed.name])
-            assert len(result['added']) == 1
-            assert result['added'][0] == convert.path_to_index_entry(renamed)
-            assert result['deleted'] == []
-            assert result['modified'] == []
+            assert len(result.added) == 1
+            assert result.added[0] == convert.path_to_index_entry(renamed)
+            assert result.deleted == []
+            assert result.modified == []
 
             result = index_diff.diff(['.'])
-            assert len(result['added']) == 1
-            assert len(result['deleted']) == 1
-            assert result['modified'] == []
+            assert len(result.added) == 1
+            assert len(result.deleted) == 1
+            assert result.modified == []
 
             result = index_diff.diff([f'../{test_directory.name}'])
-            assert len(result['added']) == 1
-            assert len(result['deleted']) == 1
-            assert result['modified'] == []
+            assert len(result.added) == 1
+            assert len(result.deleted) == 1
+            assert result.modified == []
 
 
     def test_diff_on_check_duplicate_path(
@@ -198,6 +197,6 @@ class TestIndexDiff:
             _, _path3 = tempfile.mkstemp(dir=test_directory)
 
             result = index_diff.diff([_path, _path2, _path3, './'])
-            assert len(result['added']) == 1
-            assert len(result['deleted']) == 1
-            assert len(result['modified']) == 1
+            assert len(result.added) == 1
+            assert len(result.deleted) == 1
+            assert len(result.modified) == 1

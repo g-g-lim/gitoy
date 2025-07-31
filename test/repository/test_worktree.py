@@ -11,7 +11,6 @@ from unittest.mock import patch
 from repository.repository import Repository
 
 from src.repository.worktree import Worktree
-from src.util.file import File
 
 # Add src to path
 src_path = Path(__file__).parent.parent / "src"
@@ -22,13 +21,13 @@ if str(src_path) not in sys.path:
 class TestWorktreeFindPaths:
     """Test cases for Repository add method."""
 
-    def test_find_paths_with_normal_file(self, repository: Repository, worktree: Worktree, test_directory: Path, test_file: File):
+    def test_find_paths_with_normal_file(self, repository: Repository, worktree: Worktree, test_directory: Path, test_file_path: Path):
         repository.init()
 
         with patch('os.getcwd', return_value=test_directory.as_posix()):
-            result = worktree.match(test_file.path.name)
+            result = worktree.match(test_file_path.name)
             assert len(result) == 1
-            assert result[0].name == test_file.path.name
+            assert result[0].name == test_file_path.name
             assert result[0].is_file()
             assert result[0].is_absolute()
 

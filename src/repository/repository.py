@@ -1,14 +1,13 @@
 from pathlib import Path
 from repository.blob_store import BlobStore
+from repository.compress_file import CompressFile
 from repository.index_diff import IndexDiff
 from repository.index_store import IndexStore
-from util.file import File
+from repository.path_validator import PathValidator
 from .repo_path import RepositoryPath
 from database.database import Database
 from util.result import Result
 from .worktree import Worktree
-import zstandard
-import mmap
 from repository.hash_file import HashFile
 from repository.convert import Convert
 
@@ -20,22 +19,24 @@ class Repository:
         database: Database, 
         repository_path: RepositoryPath, 
         worktree: Worktree, 
-        compression: zstandard.ZstdCompressor,
+        compress_file: CompressFile,
         hash_file: HashFile,
         index_store: IndexStore,
         blob_store: BlobStore,
         convert: Convert,
-        index_diff: IndexDiff
+        index_diff: IndexDiff,
+        path_validator: PathValidator,
     ):
         self.db = database
         self.path = repository_path
         self.worktree = worktree
-        self.compression = compression
+        self.compress_file = compress_file
         self.hash_file = hash_file
         self.index_store = index_store
         self.blob_store = blob_store
         self.convert = convert
         self.index_diff = index_diff
+        self.path_validator = path_validator
 
     def is_initialized(self):
         return self.path.get_repo_dir() is not None and self.db.is_initialized()
@@ -91,26 +92,27 @@ class Repository:
         self.db.delete_branch(branch)
         return Result.Ok(None)
 
-    def compress(self, file: File) -> bytes:
-        if  file.is_mid:
-            return self.compression.compress(file.read_body())
-        elif file.is_small:
-            with open(file.path, 'rb') as f:
-                with mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_file:
-                    return self.compression.compress(mmap_file)
-        else:
-            raise NotImplementedError("File size is too large")
+    def compress(self, path: Path) -> bytes:
+        return self.compress_file.compress(path)
 
     def hash(self, path: Path) -> str:
         return self.hash_file.hash(path)
 
     def add_index(self, paths: list[str]):
-        diff_result = self.index_diff.diff(paths)
+        result = self.path_validator.validate(paths)
+        if result.failed:
+            return result
         
-        blobs = [self.convert.path_to_blob(Path(entry.file_path)) for entry in diff_result['added']] 
-        if len(blobs) == 0:
+        diff_result = self.index_diff.diff(paths)
+
+        if diff_result.is_empty():
             return Result.Ok(None)
-
-        self.blob_store.save(blobs)
-
+        
+        self.index_store.create(diff_result.added)
+        self.index_store.update(diff_result.modified)
+        self.index_store.delete(diff_result.deleted)
+        
+        blobs = [self.convert.index_entry_to_blob(entry) for entry in diff_result.should_create_blob_entries()] 
+        self.blob_store.create(blobs)
+        
         return Result.Ok(None)

@@ -1,4 +1,4 @@
-class Result:
+class Result[T]:
     """Represents the outcome of an operation.
 
     Attributes
@@ -14,7 +14,7 @@ class Result:
         operation was successful.
     """
 
-    def __init__(self, success, value, error):
+    def __init__(self, success: bool, value: T, error: str):
         self.success = success
         self.error = error
         self.value = value
@@ -37,11 +37,11 @@ class Result:
             return f'<Result success={self.success}, message="{self.error}">'
 
     @classmethod
-    def Fail(cls, error) -> 'Result':
+    def Fail(cls, error: str) -> 'Result':
         """Create a Result object for a failed operation."""
         return cls(False, value=None, error=error)
 
     @classmethod
-    def Ok(cls, value=None) -> 'Result':
+    def Ok(cls, value: T) -> 'Result':
         """Create a Result object for a successful operation."""
         return cls(True, value=value, error=None)

@@ -7,10 +7,12 @@ import fire
 import sys
 
 from repository.blob_store import BlobStore
+from repository.compress_file import CompressFile
 from repository.convert import Convert
 from repository.hash_file import HashFile
 from repository.index_diff import IndexDiff
 from repository.index_store import IndexStore
+from repository.path_validator import PathValidator
 from repository.repository import Repository
 from command.init import Init
 from database.database import Database
@@ -64,22 +66,24 @@ def main():
     sqlite = SQLite(repo_db_path)
     database = Database(sqlite)
     worktree = Worktree(repository_path)
-    compressor = zstandard.ZstdCompressor()
+    compress_file = CompressFile(zstandard.ZstdCompressor())
     index_store = IndexStore(database, repository_path)
     blob_store = BlobStore(database)
     hash_file = HashFile()
-    convert = Convert(hash_file, repository_path)
+    convert = Convert(hash_file, compress_file, repository_path)
     index_diff = IndexDiff(index_store, worktree, convert)
+    path_validator = PathValidator(worktree, index_store)
     repository = Repository(
         database, 
         repository_path, 
         worktree, 
-        compressor, 
+        compress_file, 
         hash_file,
         index_store, 
         blob_store,
         convert,
-        index_diff
+        index_diff,
+        path_validator
     )
     console = Console()
     commands= [

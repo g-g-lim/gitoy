@@ -2,6 +2,8 @@ import hashlib
 import mmap
 from pathlib import Path
 
+from util.constant import FILE_SIZE_MEDIUM, FILE_SIZE_SMALL
+
 
 class HashFile:
     
@@ -10,10 +12,10 @@ class HashFile:
         size = stat.st_size
         sha1 = hashlib.sha1()
         
-        if size < 32 * 1024:
+        if size <= FILE_SIZE_SMALL:
             sha1.update(path.read_bytes())
             return sha1.hexdigest()
-        elif size < 512 * 1024 * 1024:
+        elif size <= FILE_SIZE_MEDIUM:
             with open(path, 'rb') as f:
                 with mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ) as mmap_file:
                     sha1.update(mmap_file)

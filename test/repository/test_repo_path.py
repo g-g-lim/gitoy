@@ -2,17 +2,16 @@ from pathlib import Path
 import tempfile
 from unittest.mock import patch
 from src.repository.repo_path import RepositoryPath
-from util.file import File
 
 
 class TestRepositoryPath:
     """Test cases for Repository class."""
 
-    def test_absolute_path_to_relative_path(self, repository_path: RepositoryPath, test_file: File):
+    def test_absolute_path_to_relative_path(self, repository_path: RepositoryPath, test_file_path: Path):
         # /{absolute_path}/gitoy-2/test/test_dir/tmp3d909r0g
         repository_path.create_repo_dir()
-        relative_path = repository_path.to_relative_path(test_file.path.absolute())
-        assert relative_path == test_file.path.relative_to(repository_path.worktree_path)
+        relative_path = repository_path.to_relative_path(test_file_path.absolute())
+        assert relative_path == test_file_path.relative_to(repository_path.worktree_path)
         assert relative_path.is_absolute() is False
 
     def test_absolute_path_to_relative_path_2(self, repository_path: RepositoryPath, test_directory: Path):
@@ -25,13 +24,13 @@ class TestRepositoryPath:
     def test_invalid_path(self, repository_path: RepositoryPath):
         pass
 
-    def test_relative_path_to_relative_path(self, repository_path: RepositoryPath, test_directory: Path, test_file: File):
+    def test_relative_path_to_relative_path(self, repository_path: RepositoryPath, test_directory: Path, test_file_path: Path):
         # path: tmp3d909r0g current_dir: test/test_dir
         repository_path.create_repo_dir()
 
         with patch('os.getcwd', return_value=test_directory.as_posix()):
-            relative_path = repository_path.to_relative_path(test_file.path.name)
-            assert relative_path == test_file.path.relative_to(repository_path.worktree_path)
+            relative_path = repository_path.to_relative_path(test_file_path.name)
+            assert relative_path == test_file_path.relative_to(repository_path.worktree_path)
 
     def test_relative_path_to_relative_path_2(self, repository_path: RepositoryPath, test_directory: Path):
         # path: ./ current_dir: test/test_dir
@@ -90,7 +89,7 @@ class TestRepositoryPath:
             relative_path = repository_path.to_relative_path('../sub_dir/' + temp_file_path.name)
             assert relative_path == Path(f'{test_directory.name}/sub_dir/{temp_file_path.name}')
 
-    def test_relative_path_to_relative_path_5(self, repository_path: RepositoryPath, test_directory: Path, test_file: File):
+    def test_relative_path_to_relative_path_5(self, repository_path: RepositoryPath, test_directory: Path):
         # path: ./ current_dir: test/test_dir
         repository_path.create_repo_dir()
 
