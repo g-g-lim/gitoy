@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from util.array import unique
+
 from .repo_path import RepositoryPath
 
 class Worktree:
@@ -23,6 +25,6 @@ class Worktree:
 
     # TODO: process duplicate paths
     def find_paths(self, paths: list[str]) -> list[Path]:
-        return [p for path in paths for p in self.match(path)]
+        return list(unique([p for path in paths for p in self.match(path)], 'as_posix'))
     
     

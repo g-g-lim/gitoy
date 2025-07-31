@@ -16,9 +16,6 @@ class IndexDiff:
         worktree_paths = self.worktree.find_paths(paths)
         worktree_entries = [self.convert.path_to_index_entry(p) for p in worktree_paths]
 
-        print('index_entries', index_entries)
-        print('worktree_entries', worktree_entries)
-
         diff_result: dict[str, list[IndexEntry]] = {
             'added': [],
             'deleted': [],

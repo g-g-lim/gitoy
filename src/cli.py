@@ -9,6 +9,7 @@ import sys
 from repository.blob_store import BlobStore
 from repository.convert import Convert
 from repository.hash_file import HashFile
+from repository.index_diff import IndexDiff
 from repository.index_store import IndexStore
 from repository.repository import Repository
 from command.init import Init
@@ -67,7 +68,8 @@ def main():
     index_store = IndexStore(database, repository_path)
     blob_store = BlobStore(database)
     hash_file = HashFile()
-    convert = Convert(hash_file)
+    convert = Convert(hash_file, repository_path)
+    index_diff = IndexDiff(index_store, worktree, convert)
     repository = Repository(
         database, 
         repository_path, 
@@ -76,7 +78,8 @@ def main():
         hash_file,
         index_store, 
         blob_store,
-        convert
+        convert,
+        index_diff
     )
     console = Console()
     commands= [

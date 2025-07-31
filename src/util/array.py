@@ -6,8 +6,10 @@ def unique(seq, key=None):
             value = item
         elif isinstance(item, dict):
             value = item[key]
+        elif callable(getattr(item, key, None)):
+            value = getattr(item, key)()
         else:
-            value = getattr(item, key)
+            value = item[key]
         if value in seen:
             continue
         seen_add(value)

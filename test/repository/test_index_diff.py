@@ -169,3 +169,35 @@ class TestIndexDiff:
             assert len(result['added']) == 1
             assert len(result['deleted']) == 1
             assert result['modified'] == []
+
+
+    def test_diff_on_check_duplicate_path(
+        self,
+        repository: Repository,
+        index_diff: IndexDiff,
+        convert: Convert,
+        database: Database,
+        test_directory: Path,
+    ):
+        repository.init()
+
+        with mock.patch('os.getcwd', return_value=test_directory.as_posix()):
+            _, _path = tempfile.mkstemp(dir=test_directory)
+            path = Path(_path)
+            index_entry = convert.path_to_index_entry(path)
+            database.create_index_entries([index_entry])
+            path.unlink()
+
+            _, _path2 = tempfile.mkstemp(dir=test_directory)
+
+            path2 = Path(_path2)
+            index_entry2 = convert.path_to_index_entry(path2)
+            database.create_index_entries([index_entry2])
+            path2.write_text('modified')
+
+            _, _path3 = tempfile.mkstemp(dir=test_directory)
+
+            result = index_diff.diff([_path, _path2, _path3, './'])
+            assert len(result['added']) == 1
+            assert len(result['deleted']) == 1
+            assert len(result['modified']) == 1

@@ -108,7 +108,8 @@ def repository(
     hash_file, 
     index_store, 
     blob_store,
-    convert
+    convert,
+    index_diff
 ):
     return Repository(
         database, 
@@ -118,7 +119,8 @@ def repository(
         hash_file,
         index_store,
         blob_store,
-        convert
+        convert,
+        index_diff
     )
 
 

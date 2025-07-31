@@ -1,7 +1,7 @@
 from pathlib import Path
 from repository.blob_store import BlobStore
+from repository.index_diff import IndexDiff
 from repository.index_store import IndexStore
-from util.array import unique
 from util.file import File
 from .repo_path import RepositoryPath
 from database.database import Database
@@ -24,7 +24,8 @@ class Repository:
         hash_file: HashFile,
         index_store: IndexStore,
         blob_store: BlobStore,
-        convert: Convert
+        convert: Convert,
+        index_diff: IndexDiff
     ):
         self.db = database
         self.path = repository_path
@@ -34,6 +35,7 @@ class Repository:
         self.index_store = index_store
         self.blob_store = blob_store
         self.convert = convert
+        self.index_diff = index_diff
 
     def is_initialized(self):
         return self.path.get_repo_dir() is not None and self.db.is_initialized()
@@ -101,30 +103,11 @@ class Repository:
 
     def hash(self, path: Path) -> str:
         return self.hash_file.hash(path)
-    
-    def match_paths(self, paths: list[str]):
-        matched_files: list[File] = []
-        for path in paths:
-            files = self.worktree.find_files(path)
-            if len(files) == 0:
-                return Result.Fail(f"Pathspec {path} did not match any files")
-            matched_files.extend(files)
-
-        matched_files = list(unique(matched_files, 'relative_path_posix'))
-        return Result.Ok(matched_files)
 
     def add_index(self, paths: list[str]):
-        result = self.match_paths(paths)
-        if result.failed:
-            return result
-
-        matched_files: list[File] = result.value
-
-        index_entries = [file.to_index_entry(self.hash(file)) for file in matched_files]
-        result = self.index_store.save(index_entries)
-        created_entry_paths = [entry.file_path for entry in result.value]
-
-        blobs = [self.convert.path_to_blob(file.path) for file in matched_files if file.relative_path_posix in created_entry_paths] 
+        diff_result = self.index_diff.diff(paths)
+        
+        blobs = [self.convert.path_to_blob(Path(entry.file_path)) for entry in diff_result['added']] 
         if len(blobs) == 0:
             return Result.Ok(None)
 
