@@ -30,18 +30,22 @@ if str(src_path) not in sys.path:
 
 TEST_GITOY_DIR = ".gitoy_test"
 
-@pytest.fixture(scope="session")
-def test_root_directory():
+@pytest.fixture(scope="function")
+def test_repo_directory():
     """
-    The root directory of the test suite.
-    project_root/
+    project_root/test/test_repo
     """
-    return root_path / 'test'
+    repo_dir_path = root_path / 'test' / 'test_repo'
+    repo_dir_path.mkdir(parents=True, exist_ok=True)
+
+    yield repo_dir_path
+
+    shutil.rmtree(repo_dir_path)
 
 
 @pytest.fixture(scope="function")
-def repository_path(test_root_directory):
-    repository_path = RepositoryPath(test_root_directory, TEST_GITOY_DIR)
+def repository_path(test_repo_directory):
+    repository_path = RepositoryPath(test_repo_directory, TEST_GITOY_DIR)
     
     yield repository_path
 
@@ -133,11 +137,11 @@ def repository(
 
 
 @pytest.fixture(scope="function")
-def test_directory(test_root_directory):
+def test_directory(test_repo_directory):
     """
-    project_root/test_dir
+    project_root/test/test_repo/test_dir
     """
-    directory = test_root_directory / "test_dir"
+    directory = test_repo_directory / "test_dir"
     directory.mkdir(parents=True, exist_ok=True)
 
     yield directory
@@ -149,7 +153,7 @@ def test_directory(test_root_directory):
 @pytest.fixture(scope="function")
 def test_file_path(test_directory):
     """ 
-    project_root/test_dir/test_file
+    project_root/test/test_repo/test_dir/test_file
     """
     _, path = tempfile.mkstemp(dir=test_directory)
     path = Path(path)
@@ -162,6 +166,9 @@ def test_file_path(test_directory):
     
 @pytest.fixture(scope="function")
 def test_large_file_path(test_directory):
+    """
+    project_root/test/test_repo/test_dir/test_large_file
+    """
     _, path = tempfile.mkstemp(dir=test_directory)
     path = Path(path)
     path.write_bytes(b"a" * 512 * 1024 * 1024)
@@ -174,6 +181,9 @@ def test_large_file_path(test_directory):
 
 @pytest.fixture(scope="function")
 def test_image_file_path(test_directory):
+    """
+    project_root/test/test_repo/test_dir/test_image_file
+    """
     image_file = test_directory / "test.png"
     image_file.write_bytes(
         b"\x89PNG\r\n\x1a\n"

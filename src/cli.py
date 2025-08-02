@@ -19,6 +19,7 @@ from database.database import Database
 from database.sqlite import SQLite
 from command.branch import Branch
 from command.add import Add
+from command.status import Status
 from repository.worktree import Worktree
 from repository.repo_path import RepositoryPath
 from util.console import Console
@@ -36,6 +37,7 @@ class GitoyCLI:
     - init: Initialize a new Gitoy repository
     - branch: List, create, or delete branches
     - add: Add a file to the Gitoy repository index
+    - status: Show the working tree status
     """
     
     def __init__(self, commands: list[Command]):
@@ -89,7 +91,8 @@ def main():
     commands= [
         Init(repository, console), 
         Branch(repository, console),
-        Add(repository, console)
+        Add(repository, console),
+        Status(repository, console)
     ]
     app = GitoyCLI(commands)
     fire.Fire(app)

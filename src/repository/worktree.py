@@ -11,13 +11,18 @@ class Worktree:
     @property
     def root_dir(self) -> Path:
         return self.repo_path.worktree_path
-
-    # TODO: test for absolute path 
+    
     def match(self, path: str) -> list[Path]:
-        relative_path = self.repo_path.to_relative_path(path)
-        path = self.root_dir / relative_path
+        relative_path: Path = self.repo_path.to_relative_path(path)
+        path: Path = self.root_dir / relative_path
         if (path.is_dir()):
-            return [p for p in path.rglob("*") if p.is_file()]
+            result = []
+            for p in path.rglob("*"):
+                if self.repo_path.repo_dir in p.parents:
+                    continue
+                if p.is_file():
+                    result.append(p)
+            return result
         elif (path.is_file()):
             return [path]
         else:

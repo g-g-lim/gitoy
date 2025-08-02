@@ -328,3 +328,144 @@ class TestRepositoryAddIndex:
 
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 1
+
+
+class TestRepositoryStatus:
+    """Test cases for Repository status functionality."""
+
+    def test_status_in_uninitialized_repository(self, repository: Repository):
+        """Test status in uninitialized repository returns error."""
+        result = repository.status()
+        assert result.failed is True
+        assert result.error == "Not a gitoy repository"
+
+    def test_status_empty_repository(self, repository: Repository):
+        """Test status in empty initialized repository."""
+        repository.init()
+        result = repository.status()
+        
+        assert result.success is True
+        status_data = result.value
+        assert status_data['branch_name'] == "main"
+        assert status_data['unstaged']['modified'] == []
+        assert status_data['unstaged']['deleted'] == []
+        assert status_data['untracked'] == []
+
+    def test_status_with_untracked_files(self, repository: Repository, test_directory: Path):
+        """Test status shows untracked files."""
+        repository.init()
+        
+        with patch('os.getcwd', return_value=test_directory.as_posix()):
+            _, path1 = tempfile.mkstemp(dir=test_directory)
+            _, path2 = tempfile.mkstemp(dir=test_directory)
+            path1 = Path(path1)
+            path2 = Path(path2)
+            
+            result = repository.status()
+            
+            assert result.success is True
+            status_data = result.value
+            assert status_data['branch_name'] == "main"
+            assert path1 in status_data['untracked']
+            assert path2 in status_data['untracked']
+            assert len(status_data['untracked']) == 2
+
+    def test_status_with_unstaged_modified_files(self, repository: Repository, test_directory: Path):
+        """Test status shows unstaged modified files."""
+        repository.init()
+        
+        with patch('os.getcwd', return_value=test_directory.as_posix()):
+            _, path = tempfile.mkstemp(dir=test_directory)
+            path = Path(path)
+            
+            repository.add_index([path.name])
+            
+            path.write_bytes(b"modified content")
+            
+            result = repository.status()
+            
+            assert result.success is True
+            status_data = result.value
+            assert status_data['branch_name'] == "main"
+            assert path in status_data['unstaged']['modified']
+            assert status_data['unstaged']['deleted'] == []
+            assert status_data['untracked'] == []
+
+    def test_status_with_unstaged_deleted_files(self, repository: Repository, test_directory: Path):
+        """Test status shows unstaged deleted files."""
+        repository.init()
+        
+        with patch('os.getcwd', return_value=test_directory.as_posix()):
+            _, path = tempfile.mkstemp(dir=test_directory)
+            path = Path(path)
+            path_name = path.name
+            
+            repository.add_index([path_name])
+            
+            path.unlink()
+
+            result = repository.status()
+            
+            assert result.success is True
+            status_data = result.value
+            assert status_data['branch_name'] == "main"
+            assert path in status_data['unstaged']['deleted']
+            assert status_data['unstaged']['modified'] == []
+            assert status_data['untracked'] == []
+
+    def test_status_mixed_file_states(self, repository: Repository, test_directory: Path):
+        """Test status with mixed file states."""
+        repository.init()
+        
+        with patch('os.getcwd', return_value=test_directory.as_posix()):
+            _, untracked_path = tempfile.mkstemp(dir=test_directory)
+            _, modified_path = tempfile.mkstemp(dir=test_directory)
+            _, deleted_path = tempfile.mkstemp(dir=test_directory)
+            
+            untracked_path = Path(untracked_path)
+            modified_path = Path(modified_path)
+            deleted_path = Path(deleted_path)
+            
+            repository.add_index([modified_path.name, deleted_path.name])
+            
+            modified_path.write_bytes(b"modified content")
+            deleted_path.unlink()
+            
+            result = repository.status()
+            
+            assert result.success is True
+            status_data = result.value
+            assert status_data['branch_name'] == "main"
+            assert untracked_path in status_data['untracked']
+            assert modified_path in status_data['unstaged']['modified']
+            assert deleted_path in status_data['unstaged']['deleted']
+
+    def test_status_mixed_file_states_2(self, repository: Repository, test_directory: Path, test_repo_directory: Path):
+        """Test status with mixed file states."""
+        repository.init()
+        
+        with patch('os.getcwd', return_value=test_directory.as_posix()):
+            _, untracked_path = tempfile.mkstemp(dir=test_repo_directory)
+            _, untracked_path2 = tempfile.mkstemp(dir=test_repo_directory)
+            _, modified_path = tempfile.mkstemp(dir=test_directory)
+            _, deleted_path = tempfile.mkstemp(dir=test_directory)
+            
+            untracked_path = Path(untracked_path)
+            untracked_path2 = Path(untracked_path2)
+            modified_path = Path(modified_path)
+            deleted_path = Path(deleted_path)
+            
+            repository.add_index([modified_path.name, deleted_path.name])
+            
+            modified_path.write_bytes(b"modified content")
+            deleted_path.unlink()
+            
+            result = repository.status()
+            
+            assert result.success is True
+            status_data = result.value
+            assert status_data['branch_name'] == "main"
+            assert untracked_path in status_data['untracked']
+            assert untracked_path2 in status_data['untracked']
+            assert modified_path in status_data['unstaged']['modified']
+            assert deleted_path in status_data['unstaged']['deleted']

@@ -1,4 +1,5 @@
 from pathlib import Path
+from custom_types import StatusData
 from repository.blob_store import BlobStore
 from repository.compress_file import CompressFile
 from repository.index_diff import IndexDiff
@@ -38,6 +39,10 @@ class Repository:
         self.index_diff = index_diff
         self.path_validator = path_validator
 
+    @property
+    def worktree_path(self):
+        return self.path.worktree_path
+
     def is_initialized(self):
         return self.path.get_repo_dir() is not None and self.db.is_initialized()
 
@@ -70,7 +75,7 @@ class Repository:
         return Result.Ok({'ref': new_branch, 'new': True})
         
     def update_head_branch(self, branch_name: str):
-        head_branch = self.db.get_head_branch()
+        head_branch = self.get_head_branch()
         prev_ref_name = head_branch.ref_name
         create_ref_name = f"refs/heads/{branch_name}"
 
@@ -116,3 +121,24 @@ class Repository:
         self.blob_store.create(blobs)
         
         return Result.Ok(None)
+
+    def status(self) -> Result[StatusData]:
+        if not self.is_initialized():
+            return Result.Fail("Not a gitoy repository")
+
+        head_branch = self.get_head_branch()
+        branch_name = head_branch.branch_name
+
+        worktree_path = self.worktree_path
+        diff_result = self.index_diff.diff([worktree_path.as_posix()])
+        untracked = [entry.absolute_path(worktree_path) for entry in diff_result.added]
+        unstaged = {
+            'modified': [entry.absolute_path(worktree_path) for entry in diff_result.modified],
+            'deleted': [entry.absolute_path(worktree_path) for entry in diff_result.deleted]
+        }
+
+        return Result.Ok({
+            'branch_name': branch_name,
+            'unstaged': unstaged,
+            'untracked': untracked
+        })

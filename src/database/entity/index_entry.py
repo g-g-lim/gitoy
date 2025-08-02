@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 
 from database.entity.entity import Entity
@@ -75,4 +76,14 @@ class IndexEntry(Entity):
             and self.file_mode == other.file_mode
             and self.mtime == other.mtime
         )
-        
+
+    @property
+    def file_path_obj(self):
+        return Path(self.file_path)
+
+    def absolute_path(self, root_path: Path):
+        return root_path / self.file_path_obj
+
+    @property
+    def file_name(self):
+        return self.file_path_obj.name

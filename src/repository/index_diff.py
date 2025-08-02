@@ -1,3 +1,4 @@
+from database.entity.index_entry import IndexEntry
 from repository.convert import Convert
 from repository.index_store import IndexStore
 from repository.worktree import Worktree
@@ -5,9 +6,9 @@ from repository.worktree import Worktree
 
 class IndexDiffResult:
     def __init__(self):
-        self.added = []
-        self.deleted = []
-        self.modified = []
+        self.added: list[IndexEntry] = []
+        self.deleted: list[IndexEntry] = []
+        self.modified: list[IndexEntry] = []
 
     def is_empty(self):
         return len(self.added) == 0 and len(self.deleted) == 0 and len(self.modified) == 0

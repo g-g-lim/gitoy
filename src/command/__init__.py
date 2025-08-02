@@ -4,6 +4,7 @@ from typing import Protocol, Any
 from .add import Add
 from .branch import Branch  
 from .init import Init
+from .status import Status
 
 class Command(Protocol):
     """Command interface that all gitoy commands should implement"""
@@ -17,4 +18,4 @@ class Command(Protocol):
         ...
 
 
-__all__ = [Command, Add, Branch, Init] 
+__all__ = [Command, Add, Branch, Init, Status] 

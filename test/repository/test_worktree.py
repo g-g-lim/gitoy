@@ -31,10 +31,10 @@ class TestWorktreeFindPaths:
             assert result[0].is_file()
             assert result[0].is_absolute()
 
-    def test_find_paths_with_not_exists_file(self, repository: Repository, worktree: Worktree, test_root_directory: Path):
+    def test_find_paths_with_not_exists_file(self, repository: Repository, worktree: Worktree, test_repo_directory: Path):
         repository.init()
 
-        with patch('os.getcwd', return_value=test_root_directory.as_posix()):
+        with patch('os.getcwd', return_value=test_repo_directory.as_posix()):
             result = worktree.match('testfile')
             assert len(result) == 0
 
@@ -61,10 +61,10 @@ class TestWorktreeFindPaths:
             assert len(result) == 1
             assert result[0].name == (test_directory / Path(path2)).name
 
-    def test_find_paths_with_no_file_in_directory_path(self, repository: Repository, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+    def test_find_paths_with_no_file_in_directory_path(self, repository: Repository, worktree: Worktree, test_directory: Path, test_repo_directory: Path):
         repository.init()
 
-        with patch('os.getcwd', return_value=test_root_directory.as_posix()):
+        with patch('os.getcwd', return_value=test_repo_directory.as_posix()):
             result = worktree.match(test_directory.name)
             assert len(result) == 0
 
@@ -77,12 +77,12 @@ class TestWorktreeFindPaths:
             result = worktree.match(test_directory.name + '/')
             assert len(result) == 0
 
-    def test_find_paths_with_subdir(self, repository: Repository, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+    def test_find_paths_with_subdir(self, repository: Repository, worktree: Worktree, test_directory: Path, test_repo_directory: Path):
         repository.init()
         
         subdir = test_directory / "subdir"
         subdir.mkdir(parents=True, exist_ok=True)
-        with patch('os.getcwd', return_value=test_root_directory.as_posix()):
+        with patch('os.getcwd', return_value=test_repo_directory.as_posix()):
             result = worktree.match(test_directory.name)
             assert len(result) == 0
 
@@ -108,7 +108,7 @@ class TestWorktreeFindPaths:
             for path in result:
                 assert path.name in [file_subdir.name, file2_subdir.name]
 
-    def test_file_paths_with_dot_path(self, repository: Repository, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+    def test_file_paths_with_dot_path(self, repository: Repository, worktree: Worktree, test_directory: Path, test_repo_directory: Path):
         repository.init()
 
         with patch('os.getcwd', return_value=test_directory.as_posix()):
@@ -153,7 +153,7 @@ class TestWorktreeFindPaths:
             result = worktree.match('.')
             assert len(result) == 2
 
-    def test_file_paths_with_parent_dot_path(self, repository: Repository, worktree: Worktree, test_directory: Path, test_root_directory: Path):
+    def test_file_paths_with_parent_dot_path(self, repository: Repository, worktree: Worktree, test_directory: Path, test_repo_directory: Path):
         repository.init()
 
         subdir = test_directory / "subdir"
