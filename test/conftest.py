@@ -16,6 +16,7 @@ import zstandard
 
 from src.repository.blob_store import BlobStore
 from src.repository.index_store import IndexStore
+from src.repository.tree_store import TreeStore
 from src.database.sqlite import SQLite
 from src.repository.worktree import Worktree
 from src.repository.repo_path import RepositoryPath
@@ -107,6 +108,11 @@ def path_validator(worktree, index_store):
 @pytest.fixture(scope="function")
 def blob_store(database):
     return BlobStore(database)
+
+
+@pytest.fixture(scope="function")
+def tree_store(database):
+    return TreeStore(database)
 
 
 @pytest.fixture(scope="function")
