@@ -8,7 +8,7 @@ class TreeStore:
     def __init__(self, database: Database):
         self.database = database
 
-    def get_commit_tree(self, root_tree_id: str) -> Optional[Tree]:
+    def build_commit_tree(self, root_tree_id: str) -> Optional[Tree]:
         # root_tree_db = db.get_tree(commit.tree) - DB에서 루트 TreeEntry 생성
         root_tree = self.database.get_tree_entry(root_tree_id, "tree")
         if root_tree is None:

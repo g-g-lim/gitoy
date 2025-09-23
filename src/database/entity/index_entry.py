@@ -9,7 +9,7 @@ from database.entity.entity import Entity
 class IndexEntry(Entity):
     """
     Git index entry representing staged file
-    
+
     Attributes:
         file_path: Relative file path (primary key)
         object_id: Staged object_id
@@ -26,6 +26,7 @@ class IndexEntry(Entity):
         skip_worktree: Skip worktree flag
         intent_to_add: Intent to add flag
     """
+
     file_path: str  # Primary key
     object_id: str
     file_mode: str
@@ -39,7 +40,7 @@ class IndexEntry(Entity):
     stage: int
     assume_valid: bool
     skip_worktree: bool
-    intent_to_add: bool 
+    intent_to_add: bool
 
     @staticmethod
     def primary_key_column():
@@ -67,7 +68,7 @@ class IndexEntry(Entity):
             "skip_worktree BOOLEAN",
             "intent_to_add BOOLEAN",
         ]
-    
+
     def __eq__(self, other: "IndexEntry"):
         return (
             self.file_path == other.file_path

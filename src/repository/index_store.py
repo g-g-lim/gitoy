@@ -5,7 +5,6 @@ from util.result import Result
 
 
 class IndexStore:
-
     def __init__(self, database: Database, repo_path: RepositoryPath):
         self.database = database
         self.repo_path = repo_path
@@ -32,3 +31,6 @@ class IndexStore:
     def find_by_paths(self, paths: list[str]) -> list[IndexEntry]:
         relative_paths = self.repo_path.to_normalized_relative_paths(paths)
         return self.database.list_index_entries_by_paths_startwith(relative_paths)
+
+    def find_all(self) -> list[IndexEntry]:
+        return self.database.list_index_entries()

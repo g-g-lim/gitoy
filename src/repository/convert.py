@@ -8,8 +8,12 @@ from repository.repo_path import RepositoryPath
 
 
 class Convert:
-
-    def __init__(self, hash_file: HashFile, compress_file: CompressFile, repo_path: RepositoryPath):
+    def __init__(
+        self,
+        hash_file: HashFile,
+        compress_file: CompressFile,
+        repo_path: RepositoryPath,
+    ):
         self.hash_file = hash_file
         self.compress_file = compress_file
         self.repo_path = repo_path
@@ -21,18 +25,18 @@ class Convert:
         entry = IndexEntry(
             object_id=object_id,
             file_path=file_path,
-            file_mode=oct(stat.st_mode), 
-            file_size= stat.st_size,
+            file_mode=oct(stat.st_mode),
+            file_size=stat.st_size,
             ctime=stat.st_ctime,
-            mtime=stat.st_mtime, 
-            dev=stat.st_dev, 
-            inode=stat.st_ino, 
-            uid=stat.st_uid, 
-            gid=stat.st_gid, 
-            stage=0, 
-            assume_valid=False, 
-            skip_worktree=False, 
-            intent_to_add=False
+            mtime=stat.st_mtime,
+            dev=stat.st_dev,
+            inode=stat.st_ino,
+            uid=stat.st_uid,
+            gid=stat.st_gid,
+            stage=0,
+            assume_valid=False,
+            skip_worktree=False,
+            intent_to_add=False,
         )
         return entry
 
@@ -40,7 +44,12 @@ class Convert:
         hash = self.hash_file.hash(path)
         compressed = self.compress_file.compress(path)
         stat = path.stat()
-        blob = Blob(object_id=hash, data=compressed, size=stat.st_size, created_at=datetime.now())
+        blob = Blob(
+            object_id=hash,
+            data=compressed,
+            size=stat.st_size,
+            created_at=datetime.now(),
+        )
         return blob
 
     def index_entry_to_blob(self, entry: IndexEntry) -> Blob:

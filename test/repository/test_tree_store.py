@@ -23,7 +23,7 @@ if str(src_path) not in sys.path:
 class TestTreeStoreBuildCommitTree:
     """Test cases for TreeStore.build_commit_tree method."""
 
-    def test_get_commit_tree_with_empty_tree(
+    def test_build_commit_tree_with_empty_tree(
         self, tree_store: TreeStore, repository: Repository
     ):
         """Test building a commit tree with empty root tree."""
@@ -32,12 +32,12 @@ class TestTreeStoreBuildCommitTree:
         root_tree_id = "root_tree_123"
 
         # Act
-        result = tree_store.get_commit_tree(root_tree_id)
+        result = tree_store.build_commit_tree(root_tree_id)
 
         # Assert
         assert result is None
 
-    def test_get_commit_tree_with_single_level_tree(
+    def test_build_commit_tree_with_single_level_tree(
         self, tree_store: TreeStore, repository: Repository, database: Database
     ):
         """Test building a commit tree with single level (root only)."""
@@ -77,14 +77,14 @@ class TestTreeStoreBuildCommitTree:
         )
 
         # Act
-        result = tree_store.get_commit_tree(root_tree_id)
+        result = tree_store.build_commit_tree(root_tree_id)
 
         # Assert
         assert result is not None
         assert isinstance(result, Tree)
         assert result.root_tree.entry_object_id == root_tree_id
 
-    def test_get_commit_tree_with_nested_trees(
+    def test_build_commit_tree_with_nested_trees(
         self, tree_store: TreeStore, repository: Repository, database: Database
     ):
         """Test building a commit tree with nested directory structure."""
@@ -153,7 +153,7 @@ class TestTreeStoreBuildCommitTree:
         )
 
         # Act
-        result = tree_store.get_commit_tree(root_tree_id)
+        result = tree_store.build_commit_tree(root_tree_id)
 
         # Assert
         assert result is not None
@@ -171,7 +171,7 @@ class TestTreeStoreBuildCommitTree:
         assert result.index.get("root/file1.txt") is not None
         assert result.index.get("root/file1.txt").entry_object_id == "blob_1"
 
-    def test_get_commit_tree_deeply_nested_structure(
+    def test_build_commit_tree_deeply_nested_structure(
         self, tree_store: TreeStore, repository: Repository, database: Database
     ):
         """Test building a deeply nested directory structure."""
@@ -232,7 +232,7 @@ class TestTreeStoreBuildCommitTree:
         )
 
         # Act
-        result = tree_store.get_commit_tree(root_tree_id)
+        result = tree_store.build_commit_tree(root_tree_id)
 
         # Assert
         assert result is not None
@@ -246,7 +246,7 @@ class TestTreeStoreBuildCommitTree:
         assert result.index.get("root/level1/level2") is not None
         assert result.index.get("root/level1/level2/deep_file.txt") is not None
 
-    def test_get_commit_tree_duplicated_structure(
+    def test_build_commit_tree_duplicated_structure(
         self, tree_store: TreeStore, repository: Repository, database: Database
     ):
         """Test building a deeply duplicated directory structure."""
@@ -316,7 +316,7 @@ class TestTreeStoreBuildCommitTree:
         )
 
         # Act
-        result = tree_store.get_commit_tree(root_tree_id)
+        result = tree_store.build_commit_tree(root_tree_id)
 
         # Assert
         assert result is not None

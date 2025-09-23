@@ -17,11 +17,11 @@ class TreeEntry(Entity):
         entry_type: Type of referenced object (blob, tree, commit for submodules)
     """
 
-    tree_id: str  # Primary key component
     entry_name: str  # Primary key component
     entry_mode: str
     entry_object_id: str
     entry_type: str  # "blob", "tree", "commit"
+    tree_id: Optional[str] = None  # Primary key component
 
     def __post_init__(self):
         self.parent: Optional[TreeEntry] = None

@@ -15,6 +15,9 @@ class TreeIndex:
         if path in self.cache:
             del self.cache[path]
 
+    def __iter__(self):
+        return self.cache.items()
+
     @property
     def size(self):
         return len(self.cache)
@@ -24,6 +27,12 @@ class Tree:
     def __init__(self, root_tree: TreeEntry):
         self.root_tree = root_tree
         self.index = TreeIndex()
+
+    def get_entry(self, path):
+        return self.index.get(path)
+
+    def has_entry(self, path):
+        return self.get(path) is not None
 
     def add(self, tree):
         pass
