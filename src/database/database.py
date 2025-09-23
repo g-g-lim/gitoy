@@ -6,7 +6,6 @@ from database.entity.commit import Commit
 from database.entity.ref import Ref
 from database.entity.reflog import Reflog
 from database.entity.tag import Tag
-from database.entity.tree import Tree
 from database.entity.tree_entry import TreeEntry
 from database.entity.index_entry import IndexEntry
 
@@ -21,7 +20,6 @@ class Database:
             Ref,
             Reflog,
             Tag,
-            Tree,
             TreeEntry,
             IndexEntry,
         ]

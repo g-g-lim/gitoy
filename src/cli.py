@@ -23,15 +23,15 @@ from command.status import Status
 from repository.worktree import Worktree
 from repository.repo_path import RepositoryPath
 from util.console import Console
-from command import Command
 import zstandard
+
 
 class GitoyCLI:
     """
     🚀 Gitoy CLI
 
     A simple File Version Control CLI tool built with Python Fire
-    
+
     Commands:
     - version: Show version information
     - init: Initialize a new Gitoy repository
@@ -39,21 +39,22 @@ class GitoyCLI:
     - add: Add a file to the Gitoy repository index
     - status: Show the working tree status
     """
-    
-    def __init__(self, commands: list[Command]):
+
+    def __init__(self, commands):
         """Initialize Gitoy CLI"""
 
         for command in commands:
             setattr(self, command.__class__.__name__.lower(), command)
-    
+
     def version(self):
         """Show version information"""
         return {
             "name": "Gitoy CLI",
             "version": "0.1.0",
             "description": "A simple File Version Control CLI tool built with Python",
-            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
         }
+
 
 def main():
     """Main entry point for Gitoy CLI"""
@@ -76,26 +77,27 @@ def main():
     index_diff = IndexDiff(index_store, worktree, convert)
     path_validator = PathValidator(worktree, index_store)
     repository = Repository(
-        database, 
-        repository_path, 
-        worktree, 
-        compress_file, 
+        database,
+        repository_path,
+        worktree,
+        compress_file,
         hash_file,
-        index_store, 
+        index_store,
         blob_store,
         convert,
         index_diff,
-        path_validator
+        path_validator,
     )
     console = Console()
-    commands= [
-        Init(repository, console), 
+    commands = [
+        Init(repository, console),
         Branch(repository, console),
         Add(repository, console),
-        Status(repository, console)
+        Status(repository, console),
     ]
     app = GitoyCLI(commands)
     fire.Fire(app)
 
+
 if __name__ == "__main__":
-    main() 
+    main()

@@ -6,6 +6,7 @@ from repository.compress_file import CompressFile
 from repository.hash_file import HashFile
 from repository.repo_path import RepositoryPath
 
+
 class Convert:
 
     def __init__(self, hash_file: HashFile, compress_file: CompressFile, repo_path: RepositoryPath):
@@ -29,9 +30,9 @@ class Convert:
             uid=stat.st_uid, 
             gid=stat.st_gid, 
             stage=0, 
-            assume_valid= False, 
-            skip_worktree= False, 
-            intent_to_add= False
+            assume_valid=False, 
+            skip_worktree=False, 
+            intent_to_add=False
         )
         return entry
 

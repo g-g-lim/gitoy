@@ -1,8 +1,8 @@
 from repository.repository import Repository
 from util.console import Console
 
-class Add: 
 
+class Add:
     """
     gitoy-add - Add file contents to the index
     """
@@ -15,4 +15,3 @@ class Add:
         result = self._repository.add_index(list(paths))
         if result.failed:
             self._console.error(result.error)
-    

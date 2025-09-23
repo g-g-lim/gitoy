@@ -15,7 +15,9 @@ class Init:
     def __call__(self):
         is_initialized = self._repository.is_initialized()
         if is_initialized:
-            self._console.info('Gitoy Repository already initialized')
+            self._console.info("Gitoy Repository already initialized")
         else:
             repo_dir = self._repository.init()
-            self._console.success(f'Gitoy Repository initialized at {repo_dir.absolute()}')
+            self._console.success(
+                f"Gitoy Repository initialized at {repo_dir.absolute()}"
+            )
