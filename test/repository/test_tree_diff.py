@@ -406,7 +406,7 @@ class TestTreeDiff:
             ),
         ]
 
-        database.sqlite.insert_many(index_entries)
+        database.create_index_entries(index_entries)
         database.sqlite.insert_many(tree_entries)
 
         # Add root tree entry
@@ -437,6 +437,73 @@ class TestTreeDiff:
 
         # Should have 1 deleted file (this will fail due to bug in original code)
         assert len(result.deleted) == 1
+
+    def test_diff_with_changed_file_name(
+        self, tree_diff: TreeDiff, sample_commit: Commit, database: Database, repository
+    ):
+        """Test diff with a combination of added, modified, and deleted files."""
+        # Arrange
+        repository.init()
+        database.sqlite.insert(sample_commit)
+        tree_id = sample_commit.tree_id
+
+        index_entries = [
+            IndexEntry(
+                file_path="root/after.txt",
+                object_id="blob_modified",
+                file_mode="100644",
+                file_size=200,
+                ctime=1640995200.0,
+                mtime=1640995200.0,
+                dev=1,
+                inode=12346,
+                uid=1000,
+                gid=1000,
+                stage=0,
+                assume_valid=False,
+                skip_worktree=False,
+                intent_to_add=False,
+            ),
+        ]
+
+        tree_entries = [
+            TreeEntry(
+                tree_id=tree_id,
+                entry_name="before.txt",
+                entry_mode="100644",
+                entry_object_id="blob_modified",
+                entry_type="blob",
+            ),
+        ]
+
+        database.create_index_entries(index_entries)
+        database.sqlite.insert_many(tree_entries)
+
+        # Add root tree entry
+        database.sqlite.insert(
+            TreeEntry(
+                tree_id="",
+                entry_name="root",
+                entry_mode="040000",
+                entry_object_id=tree_id,
+                entry_type="tree",
+            )
+        )
+
+        # Act
+        result = tree_diff.diff(sample_commit)
+
+        # Assert
+        assert result is not None
+        assert result.is_empty() is False
+
+        # Should have 1 added file
+        assert len(result.added) == 1
+        assert result.added[0].file_path == "root/after.txt"
+
+        # Should have 1 deleted file (this will fail due to bug in original code)
+        assert len(result.deleted) == 1
+        assert result.deleted[0].file_path == "root/before.txt"
 
     def test_diff_with_nested_directory_structure(
         self, tree_diff: TreeDiff, sample_commit: Commit, database: Database, repository
