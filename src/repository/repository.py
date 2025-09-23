@@ -5,21 +5,20 @@ from repository.compress_file import CompressFile
 from repository.index_diff import IndexDiff
 from repository.index_store import IndexStore
 from repository.path_validator import PathValidator
-from .repo_path import RepositoryPath
+from repository.repo_path import RepositoryPath
 from database.database import Database
 from util.result import Result
-from .worktree import Worktree
+from repository.worktree import Worktree
 from repository.hash_file import HashFile
 from repository.convert import Convert
 
 
 class Repository:
-    
     def __init__(
-        self, 
-        database: Database, 
-        repository_path: RepositoryPath, 
-        worktree: Worktree, 
+        self,
+        database: Database,
+        repository_path: RepositoryPath,
+        worktree: Worktree,
         compress_file: CompressFile,
         hash_file: HashFile,
         index_store: IndexStore,
@@ -67,13 +66,13 @@ class Repository:
             return Result.Fail(f"Branch {create_ref_name} already exists")
 
         if head_branch.target_object_id is None:
-            self.db.update_ref(head_branch, {'ref_name': create_ref_name})
-            head_branch.ref_name = create_ref_name  
-            return Result.Ok({'ref': head_branch, 'new': False})
+            self.db.update_ref(head_branch, {"ref_name": create_ref_name})
+            head_branch.ref_name = create_ref_name
+            return Result.Ok({"ref": head_branch, "new": False})
 
         new_branch = self.db.create_branch(name, head_branch.target_object_id)
-        return Result.Ok({'ref': new_branch, 'new': True})
-        
+        return Result.Ok({"ref": new_branch, "new": True})
+
     def update_head_branch(self, branch_name: str):
         head_branch = self.get_head_branch()
         prev_ref_name = head_branch.ref_name
@@ -82,7 +81,7 @@ class Repository:
         if prev_ref_name == create_ref_name:
             return Result.Fail(f"Branch {create_ref_name} already exists")
 
-        self.db.update_ref(head_branch, {'ref_name': create_ref_name})
+        self.db.update_ref(head_branch, {"ref_name": create_ref_name})
         head_branch.ref_name = create_ref_name
         return Result.Ok(head_branch)
 
@@ -107,19 +106,22 @@ class Repository:
         result = self.path_validator.validate(paths)
         if result.failed:
             return result
-        
+
         diff_result = self.index_diff.diff(paths)
 
         if diff_result.is_empty():
             return Result.Ok(None)
-        
+
         self.index_store.create(diff_result.added)
         self.index_store.update(diff_result.modified)
         self.index_store.delete(diff_result.deleted)
-        
-        blobs = [self.convert.index_entry_to_blob(entry) for entry in diff_result.should_create_blob_entries()] 
+
+        blobs = [
+            self.convert.index_entry_to_blob(entry)
+            for entry in diff_result.should_create_blob_entries()
+        ]
         self.blob_store.create(blobs)
-        
+
         return Result.Ok(None)
 
     def status(self) -> Result[StatusData]:
@@ -133,12 +135,14 @@ class Repository:
         diff_result = self.index_diff.diff([worktree_path.as_posix()])
         untracked = [entry.absolute_path(worktree_path) for entry in diff_result.added]
         unstaged = {
-            'modified': [entry.absolute_path(worktree_path) for entry in diff_result.modified],
-            'deleted': [entry.absolute_path(worktree_path) for entry in diff_result.deleted]
+            "modified": [
+                entry.absolute_path(worktree_path) for entry in diff_result.modified
+            ],
+            "deleted": [
+                entry.absolute_path(worktree_path) for entry in diff_result.deleted
+            ],
         }
 
-        return Result.Ok({
-            'branch_name': branch_name,
-            'unstaged': unstaged,
-            'untracked': untracked
-        })
+        return Result.Ok(
+            {"branch_name": branch_name, "unstaged": unstaged, "untracked": untracked}
+        )
