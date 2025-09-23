@@ -9,7 +9,7 @@ from database.entity.entity import Entity
 class Commit(Entity):
     """
     Git commit object
-    
+
     Attributes:
         object_id: SHA-1/SHA-256 hash (primary key)
         tree_id: Root tree object_id
@@ -24,6 +24,7 @@ class Commit(Entity):
         created_at: Object creation time
         encoding: Message encoding (optional)
     """
+
     object_id: str  # Primary key
     tree_id: str
     author_name: str
@@ -33,9 +34,8 @@ class Commit(Entity):
     committer_email: str
     committer_date: datetime
     message: str
-    size: int
     created_at: datetime
-    encoding: Optional[str] = None 
+    encoding: Optional[str] = None
 
     @staticmethod
     def table_name():
@@ -53,7 +53,6 @@ class Commit(Entity):
             "committer_email TEXT",
             "committer_date DATETIME",
             "message TEXT",
-            "size INTEGER",
             "created_at DATETIME",
             "encoding TEXT",
         ]

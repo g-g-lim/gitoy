@@ -35,7 +35,8 @@ class TestTreeStoreBuildCommitTree:
         result = tree_store.build_commit_tree(root_tree_id)
 
         # Assert
-        assert result is None
+        assert result is not None
+        assert result.root_tree is None
 
     def test_build_commit_tree_with_single_level_tree(
         self, tree_store: TreeStore, repository: Repository, database: Database
@@ -158,6 +159,7 @@ class TestTreeStoreBuildCommitTree:
         # Assert
         assert result is not None
         assert isinstance(result, Tree)
+        assert result.root_tree is not None
         assert result.root_tree.entry_object_id == root_tree_id
 
         # Check that the tree cache contains entries

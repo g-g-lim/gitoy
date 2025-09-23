@@ -9,12 +9,11 @@ class TreeStore:
         self.database = database
 
     def build_commit_tree(self, root_tree_id: str) -> Optional[Tree]:
-        # root_tree_db = db.get_tree(commit.tree) - DB에서 루트 TreeEntry 생성
         root_tree = self.database.get_tree_entry(root_tree_id, "tree")
-        if root_tree is None:
-            return None
-
         tree = Tree(root_tree)
+        if root_tree is None:
+            return tree
+
         tree.index.set(root_tree.entry_name, root_tree)
         stack = [
             {

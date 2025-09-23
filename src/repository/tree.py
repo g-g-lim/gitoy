@@ -1,11 +1,12 @@
+from typing import Optional
 from database.entity.tree_entry import TreeEntry
 
 
 class TreeIndex:
     def __init__(self):
-        self.cache = {}
+        self.cache: dict[str, TreeEntry] = {}
 
-    def get(self, path):
+    def get(self, path) -> Optional[TreeEntry]:
         return self.cache.get(path)
 
     def set(self, path, tree):
@@ -16,7 +17,8 @@ class TreeIndex:
             del self.cache[path]
 
     def __iter__(self):
-        return self.cache.items()
+        for key in self.cache.keys():
+            yield (key, self.cache[key])
 
     @property
     def size(self):
@@ -24,7 +26,7 @@ class TreeIndex:
 
 
 class Tree:
-    def __init__(self, root_tree: TreeEntry):
+    def __init__(self, root_tree: Optional[TreeEntry] = None):
         self.root_tree = root_tree
         self.index = TreeIndex()
 
@@ -32,7 +34,7 @@ class Tree:
         return self.index.get(path)
 
     def has_entry(self, path):
-        return self.get(path) is not None
+        return self.get_entry(path) is not None
 
     def add(self, tree):
         pass

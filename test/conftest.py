@@ -1,6 +1,7 @@
 """
 Pytest configuration and shared fixtures for testing.
 """
+
 import shutil
 import pytest
 from pathlib import Path
@@ -12,6 +13,7 @@ from repository.convert import Convert
 from repository.hash_file import HashFile
 from repository.index_diff import IndexDiff
 from repository.path_validator import PathValidator
+from repository.tree_diff import TreeDiff
 import zstandard
 
 from src.repository.blob_store import BlobStore
@@ -31,12 +33,13 @@ if str(src_path) not in sys.path:
 
 TEST_GITOY_DIR = ".gitoy_test"
 
+
 @pytest.fixture(scope="function")
 def test_repo_directory():
     """
     project_root/test/test_repo
     """
-    repo_dir_path = root_path / 'test' / 'test_repo'
+    repo_dir_path = root_path / "test" / "test_repo"
     repo_dir_path.mkdir(parents=True, exist_ok=True)
 
     yield repo_dir_path
@@ -47,7 +50,7 @@ def test_repo_directory():
 @pytest.fixture(scope="function")
 def repository_path(test_repo_directory):
     repository_path = RepositoryPath(test_repo_directory, TEST_GITOY_DIR)
-    
+
     yield repository_path
 
     if repository_path.repo_dir is not None:
@@ -64,7 +67,7 @@ def sqlite(repository_path):
         sqlite.truncate_all()
 
 
-@pytest.fixture(scope="function")  
+@pytest.fixture(scope="function")
 def database(sqlite):
     database = Database(sqlite)
     return database
@@ -98,7 +101,7 @@ def convert(hash_file, compress_file, repository_path):
 @pytest.fixture(scope="function")
 def index_diff(index_store, worktree, convert):
     return IndexDiff(index_store, worktree, convert)
- 
+
 
 @pytest.fixture(scope="function")
 def path_validator(worktree, index_store):
@@ -116,29 +119,34 @@ def tree_store(database):
 
 
 @pytest.fixture(scope="function")
+def tree_diff(index_store: IndexStore, tree_store: TreeStore):
+    return TreeDiff(index_store, tree_store)
+
+
+@pytest.fixture(scope="function")
 def repository(
-    database, 
-    repository_path, 
-    worktree, 
+    database,
+    repository_path,
+    worktree,
     compress_file,
-    hash_file, 
-    index_store, 
+    hash_file,
+    index_store,
     blob_store,
     convert,
     index_diff,
-    path_validator
+    path_validator,
 ):
     return Repository(
-        database, 
-        repository_path, 
-        worktree, 
+        database,
+        repository_path,
+        worktree,
         compress_file,
         hash_file,
         index_store,
         blob_store,
         convert,
         index_diff,
-        path_validator
+        path_validator,
     )
 
 
@@ -158,7 +166,7 @@ def test_directory(test_repo_directory):
 
 @pytest.fixture(scope="function")
 def test_file_path(test_directory):
-    """ 
+    """
     project_root/test/test_repo/test_dir/test_file
     """
     _, path = tempfile.mkstemp(dir=test_directory)
@@ -169,7 +177,7 @@ def test_file_path(test_directory):
     if path.exists():
         path.unlink()
 
-    
+
 @pytest.fixture(scope="function")
 def test_large_file_path(test_directory):
     """
@@ -197,7 +205,7 @@ def test_image_file_path(test_directory):
         b"\x00\x00\x00\x01"  # width: 1
         b"\x00\x00\x00\x01"  # height: 1
         b"\x08\x06\x00\x00\x00"  # bit depth, color type, compression, filter, interlace
-        b"\x1f\x15\xc4\x89" 
+        b"\x1f\x15\xc4\x89"
         b"\x00\x00\x00\x0bIDAT"
         b"\x08\xd7c\xf8\x0f\x00\x01\x01\x01\x00\x18\xdd\x8d\x18"
         b"\x00\x00\x00\x00IEND\xaeB`\x82"

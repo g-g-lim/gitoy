@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 
 from database.entity.entity import Entity
@@ -30,17 +31,17 @@ class IndexEntry(Entity):
     file_path: str  # Primary key
     object_id: str
     file_mode: str
-    file_size: int
-    ctime: int | float
-    mtime: int | float
-    dev: int
-    inode: int
-    uid: int
-    gid: int
-    stage: int
-    assume_valid: bool
-    skip_worktree: bool
-    intent_to_add: bool
+    file_size: Optional[int] = None
+    ctime: Optional[int | float] = None
+    mtime: Optional[int | float] = None
+    dev: Optional[int] = None
+    inode: Optional[int] = None
+    uid: Optional[int] = None
+    gid: Optional[int] = None
+    stage: Optional[int] = None
+    assume_valid: Optional[bool] = None
+    skip_worktree: Optional[bool] = None
+    intent_to_add: Optional[bool] = None
 
     @staticmethod
     def primary_key_column():

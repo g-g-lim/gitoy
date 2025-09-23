@@ -30,21 +30,25 @@ class TreeDiff:
         commit_tree = self.tree_store.build_commit_tree(commit.tree_id)
         diff_result = TreeDiffResult()
 
-        if commit_tree is None:
-            return diff_result
-
         for index_entry in index_entries:
-            tree_entry = commit_tree.has_entry(index_entry.file_path)
+            tree_entry = commit_tree.get_entry(index_entry.file_path)
             if tree_entry is None:
                 diff_result.added.append(index_entry)
             elif (
                 index_entry.file_mode != tree_entry.entry_mode
-                or index_entry.object_id != tree_entry.object_id
+                or index_entry.object_id != tree_entry.entry_object_id
             ):
                 diff_result.modified.append(index_entry)
 
-        for path, _ in commit_tree.index:
-            if path in index_entries_map:
+        for path, tree_entry in commit_tree.index:
+            if tree_entry.entry_type == "tree":
+                continue
+            if path not in index_entries_map:
+                index_entry = IndexEntry(
+                    file_path=path,
+                    file_mode=tree_entry.entry_mode,
+                    object_id=tree_entry.entry_object_id,
+                )
                 diff_result.deleted.append(index_entry)
 
         return diff_result
