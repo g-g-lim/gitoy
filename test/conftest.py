@@ -135,6 +135,8 @@ def repository(
     convert,
     index_diff,
     path_validator,
+    tree_diff,
+    tree_store,
 ):
     return Repository(
         database,
@@ -147,6 +149,8 @@ def repository(
         convert,
         index_diff,
         path_validator,
+        tree_store,
+        tree_diff,
     )
 
 

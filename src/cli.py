@@ -20,6 +20,8 @@ from database.sqlite import SQLite
 from command.branch import Branch
 from command.add import Add
 from command.status import Status
+from repository.tree_diff import TreeDiff
+from repository.tree_store import TreeStore
 from repository.worktree import Worktree
 from repository.repo_path import RepositoryPath
 from util.console import Console
@@ -76,6 +78,8 @@ def main():
     convert = Convert(hash_file, compress_file, repository_path)
     index_diff = IndexDiff(index_store, worktree, convert)
     path_validator = PathValidator(worktree, index_store)
+    tree_store = TreeStore(database)
+    tree_diff = TreeDiff(index_store, tree_store)
     repository = Repository(
         database,
         repository_path,
@@ -87,6 +91,8 @@ def main():
         convert,
         index_diff,
         path_validator,
+        tree_store,
+        tree_diff,
     )
     console = Console()
     commands = [

@@ -19,6 +19,7 @@ class Status:
 
         status_data = status_result.value
         branch_name = status_data["branch_name"]
+        staged = status_data["staged"]
         unstaged = status_data["unstaged"]
         untracked = status_data["untracked"]
 
@@ -26,6 +27,36 @@ class Status:
         self._console.info("")
 
         worktree_path = self._repository.worktree_path
+
+        if staged["added"] or staged["modified"] or staged["deleted"]:
+            self._console.info("staged")
+            self._console.info("")
+            for file_path in staged["added"]:
+                self._console.log(
+                    f"new file: {file_path.relative_to(worktree_path)}", "green"
+                )
+            for file_path in staged["modified"]:
+                self._console.log(
+                    f"modified: {file_path.relative_to(worktree_path)}", "green"
+                )
+            for file_path in staged["deleted"]:
+                self._console.log(
+                    f"deleted: {file_path.relative_to(worktree_path)}", "green"
+                )
+            self._console.info("")
+
+        if unstaged["modified"] or unstaged["deleted"]:
+            self._console.info("unstaged")
+            self._console.info("")
+            for file_path in unstaged["modified"]:
+                self._console.log(
+                    f"modified: {file_path.relative_to(worktree_path)}", "yellow"
+                )
+            for file_path in unstaged["deleted"]:
+                self._console.log(
+                    f"deleted: {file_path.relative_to(worktree_path)}", "red"
+                )
+            self._console.info("")
 
         if unstaged["modified"] or unstaged["deleted"]:
             self._console.info("unstaged")

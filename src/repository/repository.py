@@ -7,6 +7,8 @@ from repository.index_store import IndexStore
 from repository.path_validator import PathValidator
 from repository.repo_path import RepositoryPath
 from database.database import Database
+from repository.tree_diff import TreeDiff
+from repository.tree_store import TreeStore
 from util.result import Result
 from repository.worktree import Worktree
 from repository.hash_file import HashFile
@@ -26,6 +28,8 @@ class Repository:
         convert: Convert,
         index_diff: IndexDiff,
         path_validator: PathValidator,
+        tree_store: TreeStore,
+        tree_diff: TreeDiff,
     ):
         self.db = database
         self.path = repository_path
@@ -37,6 +41,8 @@ class Repository:
         self.convert = convert
         self.index_diff = index_diff
         self.path_validator = path_validator
+        self.tree_store = tree_store
+        self.tree_diff = tree_diff
 
     @property
     def worktree_path(self):
@@ -132,17 +138,50 @@ class Repository:
         branch_name = head_branch.branch_name
 
         worktree_path = self.worktree_path
-        diff_result = self.index_diff.diff([worktree_path.as_posix()])
-        untracked = [entry.absolute_path(worktree_path) for entry in diff_result.added]
+        index_diff_result = self.index_diff.diff([worktree_path.as_posix()])
+        untracked = [
+            entry.absolute_path(worktree_path) for entry in index_diff_result.added
+        ]
         unstaged = {
             "modified": [
-                entry.absolute_path(worktree_path) for entry in diff_result.modified
+                entry.absolute_path(worktree_path)
+                for entry in index_diff_result.modified
             ],
             "deleted": [
-                entry.absolute_path(worktree_path) for entry in diff_result.deleted
+                entry.absolute_path(worktree_path)
+                for entry in index_diff_result.deleted
             ],
         }
 
+        head_commit = self.db.get_commit(head_branch.target_object_id)
+        if head_commit:
+            tree_diff_result = self.tree_diff.diff(head_commit)
+            staged = {
+                "added": [
+                    entry.absolute_path(worktree_path)
+                    for entry in tree_diff_result.added
+                ],
+                "modified": [
+                    entry.absolute_path(worktree_path)
+                    for entry in tree_diff_result.modified
+                ],
+                "deleted": [
+                    entry.absolute_path(worktree_path)
+                    for entry in tree_diff_result.deleted
+                ],
+            }
+        else:
+            staged = {
+                "added": [],
+                "modified": [],
+                "deleted": [],
+            }
+
         return Result.Ok(
-            {"branch_name": branch_name, "unstaged": unstaged, "untracked": untracked}
+            {
+                "branch_name": branch_name,
+                "staged": staged,
+                "unstaged": unstaged,
+                "untracked": untracked,
+            }
         )

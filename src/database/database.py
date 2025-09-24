@@ -139,3 +139,9 @@ class Database:
             f"SELECT * FROM {TreeEntry.table_name()} WHERE tree_id = '{tree_id}'"
         )
         return [TreeEntry(**tree_entry) for tree_entry in tree_entries]
+
+    def get_commit(self, object_id: str) -> Optional[Commit]:
+        commits = self.sqlite.select(
+            f"SELECT * FROM {Commit.table_name()} WHERE object_id = '{object_id}'"
+        )
+        return Commit(**commits[0]) if commits else None

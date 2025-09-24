@@ -7,8 +7,7 @@ from util.path import normalize_path
 
 
 class RepositoryPath:
-
-    def __init__(self, cwd: Optional[Path] = None, repo_dir_name = GITOY_DIR):
+    def __init__(self, cwd: Optional[Path] = None, repo_dir_name=GITOY_DIR):
         self.cwd = cwd or Path(os.getcwd())
         self.repo_dir_name = repo_dir_name
         self.repo_dir = self.get_repo_dir()
@@ -40,16 +39,16 @@ class RepositoryPath:
     def create_repo_dir(self) -> Path:
         if self.repo_dir is not None:
             return self.repo_dir
-        
+
         self.repo_dir = self.cwd / self.repo_dir_name
         self.repo_dir.mkdir(parents=True, exist_ok=True)
         return self.repo_dir
-    
+
     def create_repo_db_path(self):
         return Path(self.cwd, self.repo_dir_name, GITOY_DB_FILE)
-    
+
     def to_relative_path(self, path: str | Path) -> Path:
-        if (isinstance(path, str)):
+        if isinstance(path, str):
             path = Path(path)
         return path.resolve().relative_to(self.worktree_path)
 
