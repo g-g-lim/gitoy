@@ -1,3 +1,4 @@
+from typing import Optional
 from database.entity.commit import Commit
 from database.entity.index_entry import IndexEntry
 from repository.index_store import IndexStore
@@ -21,13 +22,15 @@ class TreeDiff:
         self.index_store = index_store
         self.tree_store = TreeStore
 
-    def diff(self, commit: Commit) -> TreeDiffResult:
+    def diff(self, commit: Optional[Commit]) -> TreeDiffResult:
         index_entries = self.index_store.find_all()
         index_entries_map = {}
         for index_entry in index_entries:
             index_entries_map[index_entry.file_path] = index_entry
 
-        commit_tree = self.tree_store.build_commit_tree(commit.tree_id)
+        commit_tree = self.tree_store.build_commit_tree(
+            "" if commit is None else commit.tree_id
+        )
         diff_result = TreeDiffResult()
 
         for index_entry in index_entries:

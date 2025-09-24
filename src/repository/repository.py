@@ -154,28 +154,19 @@ class Repository:
         }
 
         head_commit = self.db.get_commit(head_branch.target_object_id)
-        if head_commit:
-            tree_diff_result = self.tree_diff.diff(head_commit)
-            staged = {
-                "added": [
-                    entry.absolute_path(worktree_path)
-                    for entry in tree_diff_result.added
-                ],
-                "modified": [
-                    entry.absolute_path(worktree_path)
-                    for entry in tree_diff_result.modified
-                ],
-                "deleted": [
-                    entry.absolute_path(worktree_path)
-                    for entry in tree_diff_result.deleted
-                ],
-            }
-        else:
-            staged = {
-                "added": [],
-                "modified": [],
-                "deleted": [],
-            }
+        tree_diff_result = self.tree_diff.diff(head_commit)
+        staged = {
+            "added": [
+                entry.absolute_path(worktree_path) for entry in tree_diff_result.added
+            ],
+            "modified": [
+                entry.absolute_path(worktree_path)
+                for entry in tree_diff_result.modified
+            ],
+            "deleted": [
+                entry.absolute_path(worktree_path) for entry in tree_diff_result.deleted
+            ],
+        }
 
         return Result.Ok(
             {
@@ -185,8 +176,3 @@ class Repository:
                 "untracked": untracked,
             }
         )
-
-    def commit(self, message: str):
-        # 커밋 메시지를 받기
-        #
-        pass
