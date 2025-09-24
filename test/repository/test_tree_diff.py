@@ -19,12 +19,9 @@ def sample_commit():
     """Create a sample commit for testing."""
     return Commit(
         tree_id="sample_tree_123",
-        author_name="Test Author",
-        author_email="test@example.com",
         committer_name="Test Committer",
         committer_email="test@example.com",
         message="Test commit",
-        author_date=datetime.datetime.now(),
         object_id="test_commit_123",
         committer_date=datetime.datetime.now(),
         created_at=datetime.datetime.now(),

@@ -185,3 +185,8 @@ class Repository:
                 "untracked": untracked,
             }
         )
+
+    def commit(self, message: str):
+        # 커밋 메시지를 받기
+        #
+        pass
