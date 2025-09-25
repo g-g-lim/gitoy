@@ -42,6 +42,10 @@ class TreeEntry(Entity):
             "entry_type TEXT",
         ]
 
+    @property
+    def hashable_str(self):
+        return f"{self.entry_mode}:{self.entry_type}:{self.entry_object_id}:{self.entry_name}"
+
     def append_child(self, tree_entry: "TreeEntry"):
         self.children.append(tree_entry)
         tree_entry.parent = self

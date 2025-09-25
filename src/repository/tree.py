@@ -1,3 +1,4 @@
+import hashlib
 from typing import Optional
 from database.entity.index_entry import IndexEntry
 from database.entity.tree_entry import TreeEntry
@@ -29,7 +30,7 @@ class TreeIndex:
 
 class Tree:
     def __init__(self, root_tree: Optional[TreeEntry] = None):
-        self.root_tree = root_tree
+        self.root_entry = root_tree
         self.index = TreeIndex()
 
     def get_entry(self, path):
@@ -56,6 +57,8 @@ class Tree:
                 if parent_tree_entry:
                     parent_tree_entry.append_child(tree_entry)
                 self.index.set(path, tree_entry)
+                if self.root_entry is None and tree_entry.entry_name == ".":
+                    self.root_entry = tree_entry
             else:
                 # invalidate object_jd
                 tree_entry.entry_object_id = None
@@ -106,8 +109,17 @@ class Tree:
                 # invalidate object_jd
                 tree_entry.entry_object_id = None
 
-    def sync_parent_id(self):
-        pass
+    def build_object_ids(self):
+        def _hash_tree_entry(tree_entry: TreeEntry):
+            for child in tree_entry.children:
+                if child.entry_type == "tree" and not child.entry_object_id:
+                    _hash_tree_entry(child)
+            sorted_children = sorted(tree_entry.children, key=lambda x: x.entry_name)
+            content = ""
+            content = "\n".join(child.hashable_str for child in sorted_children)
+            sha1 = hashlib.sha1()
+            sha1.update(content.encode())
+            tree_entry.entry_object_id = sha1.hexdigest()
 
-    def hash(self):
-        pass
+        if self.root_entry and not self.root_entry.entry_object_id:
+            _hash_tree_entry(self.root_entry)

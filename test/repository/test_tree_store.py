@@ -29,7 +29,7 @@ class TestTreeStoreBuildCommitTree:
 
         # Assert
         assert result is not None
-        assert result.root_tree is None
+        assert result.root_entry is None
 
     def test_build_commit_tree_with_single_level_tree(
         self, tree_store: TreeStore, repository: Repository, database: Database
@@ -76,7 +76,7 @@ class TestTreeStoreBuildCommitTree:
         # Assert
         assert result is not None
         assert isinstance(result, Tree)
-        assert result.root_tree.entry_object_id == root_tree_id
+        assert result.root_entry.entry_object_id == root_tree_id
 
     def test_build_commit_tree_with_nested_trees(
         self, tree_store: TreeStore, repository: Repository, database: Database
@@ -152,8 +152,8 @@ class TestTreeStoreBuildCommitTree:
         # Assert
         assert result is not None
         assert isinstance(result, Tree)
-        assert result.root_tree is not None
-        assert result.root_tree.entry_object_id == root_tree_id
+        assert result.root_entry is not None
+        assert result.root_entry.entry_object_id == root_tree_id
 
         # Check that the tree cache contains entries
         assert result.index.size == 4
@@ -232,7 +232,7 @@ class TestTreeStoreBuildCommitTree:
         # Assert
         assert result is not None
         assert isinstance(result, Tree)
-        assert result.root_tree.entry_object_id == root_tree_id
+        assert result.root_entry.entry_object_id == root_tree_id
 
         # Verify the nested structure was built
         assert result.index.size == 4
@@ -316,7 +316,7 @@ class TestTreeStoreBuildCommitTree:
         # Assert
         assert result is not None
         assert isinstance(result, Tree)
-        assert result.root_tree.entry_object_id == root_tree_id
+        assert result.root_entry.entry_object_id == root_tree_id
 
         # Verify the nested structure was built
         assert result.index.size == 6

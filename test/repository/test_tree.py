@@ -1,3 +1,4 @@
+import hashlib
 from database.entity.index_entry import IndexEntry
 from repository.tree import Tree
 
@@ -192,3 +193,169 @@ class TestTreeAddUpdateDelete:
         new_entry = tree.get_entry("./b/file.txt")
         assert new_entry.entry_name == "file.txt"
         assert new_entry.entry_object_id == "same_oid"
+
+    def test_tree_build_object_ids(self):
+        # Given
+        tree = Tree()
+        entry_c = IndexEntry(
+            file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
+        )
+        entry_d = IndexEntry(
+            file_path="./a/d.txt", object_id="oid_d", file_mode="100644"
+        )
+        tree.add(entry_c)
+        tree.add(entry_d)
+
+        tree_b = tree.get_entry("./a/b")
+        blob_c = tree.get_entry("./a/b/c.txt")
+        content_b = blob_c.hashable_str
+        expected_hash_b = hashlib.sha1(content_b.encode()).hexdigest()
+
+        blob_d = tree.get_entry("./a/d.txt")
+        tree_b.entry_object_id = expected_hash_b
+        content_a = f"{tree_b.hashable_str}\n{blob_d.hashable_str}"
+        expected_hash_a = hashlib.sha1(content_a.encode()).hexdigest()
+
+        tree_b.entry_object_id = None
+
+        tree_a = tree.get_entry("./a")
+        tree_a.entry_object_id = expected_hash_a
+        content_root = f"{tree_a.hashable_str}"
+        expected_hash_root = hashlib.sha1(content_root.encode()).hexdigest()
+
+        tree_a.entry_object_id = None
+
+        # When
+        tree.build_object_ids()
+
+        # Then
+        assert tree_b.entry_object_id == expected_hash_b
+        assert tree.get_entry("./a").entry_object_id == expected_hash_a
+        assert tree.get_entry(".").entry_object_id == expected_hash_root
+
+    def test_tree_build_object_ids_when_extra_add(self):
+        # Given
+        tree = Tree()
+        entry_c = IndexEntry(
+            file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
+        )
+        entry_d = IndexEntry(
+            file_path="./a/d.txt", object_id="oid_d", file_mode="100644"
+        )
+        tree.add(entry_c)
+        tree.add(entry_d)
+
+        tree.build_object_ids()
+
+        entry_e = IndexEntry(
+            file_path="./a/b/e.txt", object_id="oid_e", file_mode="100644"
+        )
+
+        tree.add(entry_e)
+
+        tree_b = tree.get_entry("./a/b")
+        blob_c = tree.get_entry("./a/b/c.txt")
+        blob_e = tree.get_entry("./a/b/e.txt")
+        content_b = blob_c.hashable_str + "\n" + blob_e.hashable_str
+        expected_hash_b = hashlib.sha1(content_b.encode()).hexdigest()
+
+        blob_d = tree.get_entry("./a/d.txt")
+        tree_b.entry_object_id = expected_hash_b
+        content_a = f"{tree_b.hashable_str}\n{blob_d.hashable_str}"
+        expected_hash_a = hashlib.sha1(content_a.encode()).hexdigest()
+
+        tree_b.entry_object_id = None
+
+        tree_a = tree.get_entry("./a")
+        tree_a.entry_object_id = expected_hash_a
+        content_root = f"{tree_a.hashable_str}"
+        expected_hash_root = hashlib.sha1(content_root.encode()).hexdigest()
+
+        tree_a.entry_object_id = None
+
+        # When
+        tree.build_object_ids()
+
+        # Then
+        assert tree.get_entry("./a/b").entry_object_id == expected_hash_b
+        assert tree.get_entry("./a").entry_object_id == expected_hash_a
+        assert tree.get_entry(".").entry_object_id == expected_hash_root
+
+    def test_tree_build_object_ids_when_remove(self):
+        tree = Tree()
+        entry_c = IndexEntry(
+            file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
+        )
+        entry_d = IndexEntry(
+            file_path="./a/d.txt", object_id="oid_d", file_mode="100644"
+        )
+        tree.add(entry_c)
+        tree.add(entry_d)
+
+        tree.build_object_ids()
+
+        tree.remove(entry_c)
+
+        blob_d = tree.get_entry("./a/d.txt")
+        content_a = blob_d.hashable_str
+        expected_hash_a = hashlib.sha1(content_a.encode()).hexdigest()
+
+        tree_a = tree.get_entry("./a")
+        tree_a.entry_object_id = expected_hash_a
+        content_root = f"{tree_a.hashable_str}"
+        expected_hash_root = hashlib.sha1(content_root.encode()).hexdigest()
+
+        tree_a.entry_object_id = None
+
+        # When
+        tree.build_object_ids()
+
+        # Then
+        assert tree.get_entry("./a").entry_object_id == expected_hash_a
+        assert tree.get_entry(".").entry_object_id == expected_hash_root
+
+    def test_tree_build_object_ids_when_modified(self):
+        tree = Tree()
+        entry_c = IndexEntry(
+            file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
+        )
+        entry_d = IndexEntry(
+            file_path="./a/d.txt", object_id="oid_d", file_mode="100644"
+        )
+        tree.add(entry_c)
+        tree.add(entry_d)
+
+        tree.build_object_ids()
+
+        new_entry_c = IndexEntry(
+            file_path="./a/b/c.txt", object_id="new_oid_c", file_mode="100644"
+        )
+
+        tree.update(new_entry_c)
+
+        tree_b = tree.get_entry("./a/b")
+        blob_c = tree.get_entry("./a/b/c.txt")
+        content_b = blob_c.hashable_str
+        expected_hash_b = hashlib.sha1(content_b.encode()).hexdigest()
+
+        blob_d = tree.get_entry("./a/d.txt")
+        tree_b.entry_object_id = expected_hash_b
+        content_a = f"{tree_b.hashable_str}\n{blob_d.hashable_str}"
+        expected_hash_a = hashlib.sha1(content_a.encode()).hexdigest()
+
+        tree_b.entry_object_id = None
+
+        tree_a = tree.get_entry("./a")
+        tree_a.entry_object_id = expected_hash_a
+        content_root = f"{tree_a.hashable_str}"
+        expected_hash_root = hashlib.sha1(content_root.encode()).hexdigest()
+
+        tree_a.entry_object_id = None
+
+        # When
+        tree.build_object_ids()
+
+        # Then
+        assert tree.get_entry("./a/b").entry_object_id == expected_hash_b
+        assert tree.get_entry("./a").entry_object_id == expected_hash_a
+        assert tree.get_entry(".").entry_object_id == expected_hash_root
