@@ -19,13 +19,14 @@ class TreeEntry(Entity):
 
     entry_name: str  # Primary key component
     entry_mode: str
-    entry_object_id: str
     entry_type: str  # "blob", "tree", "commit"
+    entry_object_id: Optional[str]
     tree_id: Optional[str] = None  # Primary key component
 
     def __post_init__(self):
         self.parent: Optional[TreeEntry] = None
         self.children: list[TreeEntry] = []
+        self.relative_path: Optional[str] = None
 
     @staticmethod
     def table_name():

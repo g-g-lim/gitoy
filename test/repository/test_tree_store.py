@@ -5,19 +5,12 @@ Tests the build_commit_tree method including tree building,
 caching mechanism, and error handling.
 """
 
-from pathlib import Path
-import sys
 from database.database import Database
 
 from database.entity.tree_entry import TreeEntry
 from repository.repository import Repository
 from repository.tree_store import TreeStore
 from repository.tree import Tree
-
-# Add src to path
-src_path = Path(__file__).parent.parent / "src"
-if str(src_path) not in sys.path:
-    sys.path.insert(0, str(src_path))
 
 
 class TestTreeStoreBuildCommitTree:

@@ -1,5 +1,7 @@
 from typing import Optional
+from database.entity.index_entry import IndexEntry
 from database.entity.tree_entry import TreeEntry
+from util.path import accumulate_paths
 
 
 class TreeIndex:
@@ -36,14 +38,73 @@ class Tree:
     def has_entry(self, path):
         return self.get_entry(path) is not None
 
-    def add(self, tree):
-        pass
+    def add(self, index_entry: IndexEntry):
+        paths = accumulate_paths(index_entry.file_path)
+        parent_tree_entry: Optional[TreeEntry] = None
+        for path in paths:
+            tree_entry = self.index.get(path)
+            if tree_entry is None:
+                entry_name = path.split("/")[-1]
+                entry_type = "blob" if path == paths[-1] else "tree"
+                entry_mode = index_entry.file_mode if entry_type == "blob" else "040000"
+                entry_object_id = (
+                    index_entry.object_id if entry_type == "blob" else None
+                )
+                tree_entry = TreeEntry(
+                    entry_name, entry_mode, entry_type, entry_object_id
+                )
+                if parent_tree_entry:
+                    parent_tree_entry.append_child(tree_entry)
+                self.index.set(path, tree_entry)
+            else:
+                # invalidate object_jd
+                tree_entry.entry_object_id = None
+            if tree_entry.entry_type == "tree":
+                parent_tree_entry = tree_entry
 
-    def remove(self, tree):
-        pass
+    def remove(self, index_entry: IndexEntry):
+        paths = accumulate_paths(index_entry.file_path)
+        parent_tree_entry: Optional[TreeEntry] = None
 
-    def update(self, tree):
-        pass
+        # remove target blob tree
+        for path in paths:
+            tree_entry = self.index.get(path)
+            if tree_entry is None:
+                raise KeyError(
+                    f"Mismatch for path '{path}' when removing entry from tree"
+                )
+            tree_entry.relative_path = path
+            if parent_tree_entry is not None and tree_entry.entry_type == "blob":
+                self.index.remove(tree_entry.relative_path)
+                parent_tree_entry.remove_child(tree_entry)
+            else:
+                # invalidate object_jd
+                tree_entry.entry_object_id = None
+                parent_tree_entry = tree_entry
+
+        # remove tree entry with empty children
+        while parent_tree_entry and len(parent_tree_entry.children) == 0:
+            parent_parent = parent_tree_entry.parent
+            if parent_parent is None:
+                break
+            parent_parent.remove_child(parent_tree_entry)
+            self.index.remove(parent_tree_entry.relative_path)
+            parent_tree_entry = parent_parent
+
+    def update(self, index_entry: IndexEntry):
+        paths = accumulate_paths(index_entry.file_path)
+        for path in paths:
+            tree_entry = self.index.get(path)
+            if tree_entry is None:
+                raise KeyError(
+                    f"Mismatch for path '{path}' when modifying entry from tree"
+                )
+            if tree_entry.entry_type == "blob":
+                tree_entry.entry_object_id = index_entry.object_id
+                tree_entry.entry_mode = index_entry.file_mode
+            else:
+                # invalidate object_jd
+                tree_entry.entry_object_id = None
 
     def sync_parent_id(self):
         pass
