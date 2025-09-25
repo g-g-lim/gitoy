@@ -110,16 +110,24 @@ class Tree:
                 tree_entry.entry_object_id = None
 
     def build_object_ids(self):
+        updated_entries = []
+
         def _hash_tree_entry(tree_entry: TreeEntry):
             for child in tree_entry.children:
-                if child.entry_type == "tree" and not child.entry_object_id:
+                if child.entry_type == "tree" and child.entry_object_id is None:
                     _hash_tree_entry(child)
             sorted_children = sorted(tree_entry.children, key=lambda x: x.entry_name)
-            content = ""
             content = "\n".join(child.hashable_str for child in sorted_children)
             sha1 = hashlib.sha1()
             sha1.update(content.encode())
             tree_entry.entry_object_id = sha1.hexdigest()
+            for child in tree_entry.children:
+                if child.tree_id != tree_entry.entry_object_id:
+                    child.tree_id = tree_entry.entry_object_id
+                    updated_entries.append(child)
 
         if self.root_entry and not self.root_entry.entry_object_id:
+            updated_entries.append(self.root_entry)
             _hash_tree_entry(self.root_entry)
+
+        return updated_entries

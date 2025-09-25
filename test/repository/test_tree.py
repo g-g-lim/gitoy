@@ -1,5 +1,6 @@
 import hashlib
 from database.entity.index_entry import IndexEntry
+from database.entity.tree_entry import TreeEntry
 from repository.tree import Tree
 
 
@@ -226,12 +227,21 @@ class TestTreeAddUpdateDelete:
         tree_a.entry_object_id = None
 
         # When
-        tree.build_object_ids()
+        result = tree.build_object_ids()
 
         # Then
         assert tree_b.entry_object_id == expected_hash_b
         assert tree.get_entry("./a").entry_object_id == expected_hash_a
         assert tree.get_entry(".").entry_object_id == expected_hash_root
+
+        assert len(result) == 5
+        assert sorted(result, key=lambda x: x.entry_name) == [
+            tree.get_entry("."),
+            tree_a,
+            tree_b,
+            blob_c,
+            blob_d,
+        ]
 
     def test_tree_build_object_ids_when_extra_add(self):
         # Given
@@ -246,6 +256,10 @@ class TestTreeAddUpdateDelete:
         tree.add(entry_d)
 
         tree.build_object_ids()
+
+        before_root_entry_id = tree.get_entry(".").entry_object_id
+        before_tree_a_id = tree.get_entry("./a").entry_object_id
+        before_tree_b_id = tree.get_entry("./a/b").entry_object_id
 
         entry_e = IndexEntry(
             file_path="./a/b/e.txt", object_id="oid_e", file_mode="100644"
@@ -274,14 +288,28 @@ class TestTreeAddUpdateDelete:
         tree_a.entry_object_id = None
 
         # When
-        tree.build_object_ids()
+        result = tree.build_object_ids()
 
         # Then
+        assert len(result) == 6
+        assert sorted(result, key=lambda x: x.entry_name) == [
+            tree.get_entry("."),
+            tree_a,
+            tree_b,
+            blob_c,
+            blob_d,
+            blob_e,
+        ]
+
         assert tree.get_entry("./a/b").entry_object_id == expected_hash_b
         assert tree.get_entry("./a").entry_object_id == expected_hash_a
         assert tree.get_entry(".").entry_object_id == expected_hash_root
+        assert tree.get_entry("./a").entry_object_id != before_tree_a_id
+        assert tree.get_entry("./a/b").entry_object_id != before_tree_b_id
+        assert tree.get_entry(".").entry_object_id != before_root_entry_id
 
     def test_tree_build_object_ids_when_remove(self):
+        # Given
         tree = Tree()
         entry_c = IndexEntry(
             file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
@@ -293,6 +321,9 @@ class TestTreeAddUpdateDelete:
         tree.add(entry_d)
 
         tree.build_object_ids()
+
+        before_root_entry_id = tree.get_entry(".").entry_object_id
+        before_tree_a_id = tree.get_entry("./a").entry_object_id
 
         tree.remove(entry_c)
 
@@ -308,11 +339,20 @@ class TestTreeAddUpdateDelete:
         tree_a.entry_object_id = None
 
         # When
-        tree.build_object_ids()
+        result = tree.build_object_ids()
 
         # Then
         assert tree.get_entry("./a").entry_object_id == expected_hash_a
         assert tree.get_entry(".").entry_object_id == expected_hash_root
+        assert tree.get_entry("./a").entry_object_id != before_tree_a_id
+        assert tree.get_entry(".").entry_object_id != before_root_entry_id
+
+        assert len(result) == 3
+        assert sorted(result, key=lambda x: x.entry_name) == [
+            tree.get_entry("."),
+            tree_a,
+            blob_d,
+        ]
 
     def test_tree_build_object_ids_when_modified(self):
         tree = Tree()
@@ -326,6 +366,10 @@ class TestTreeAddUpdateDelete:
         tree.add(entry_d)
 
         tree.build_object_ids()
+
+        before_root_entry_id = tree.get_entry(".").entry_object_id
+        before_tree_a_id = tree.get_entry("./a").entry_object_id
+        before_tree_b_id = tree.get_entry("./a/b").entry_object_id
 
         new_entry_c = IndexEntry(
             file_path="./a/b/c.txt", object_id="new_oid_c", file_mode="100644"
@@ -353,9 +397,91 @@ class TestTreeAddUpdateDelete:
         tree_a.entry_object_id = None
 
         # When
-        tree.build_object_ids()
+        result = tree.build_object_ids()
 
         # Then
         assert tree.get_entry("./a/b").entry_object_id == expected_hash_b
         assert tree.get_entry("./a").entry_object_id == expected_hash_a
         assert tree.get_entry(".").entry_object_id == expected_hash_root
+        assert tree.get_entry("./a").entry_object_id != before_tree_a_id
+        assert tree.get_entry("./a/b").entry_object_id != before_tree_b_id
+        assert tree.get_entry(".").entry_object_id != before_root_entry_id
+
+        assert len(result) == 5
+        assert sorted(result, key=lambda x: x.entry_name) == [
+            tree.get_entry("."),
+            tree_a,
+            tree_b,
+            blob_c,
+            blob_d,
+        ]
+
+    def test_tree_build_object_ids_when_duplicate_structure(self):
+        # Given
+        tree = Tree()
+        entry_abc = IndexEntry(
+            file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
+        )
+        tree.add(entry_abc)
+
+        tree.build_object_ids()
+
+        entry_bc = IndexEntry(
+            file_path="./b/c.txt", object_id="oid_c", file_mode="100644"
+        )
+        tree.add(entry_bc)
+
+        # When
+        result = tree.build_object_ids()
+
+        # Then
+        assert len(result) == 4
+        assert sorted(result, key=lambda x: x.entry_name) == [
+            tree.get_entry("."),
+            tree.get_entry("./a"),
+            tree.get_entry("./b"),
+            tree.get_entry("./b/c.txt"),
+        ]
+
+    def test_tree_build_object_ids_for_check_tree_id(self):
+        # Given
+        tree = Tree()
+        entry_abc = IndexEntry(
+            file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
+        )
+        entry_abd = IndexEntry(
+            file_path="./a/b/d.txt", object_id="oid_d", file_mode="100644"
+        )
+
+        tree.add(entry_abc)
+        tree.add(entry_abd)
+
+        tree.build_object_ids()
+
+        entry_ac = IndexEntry(
+            file_path="./a/c.txt", object_id="oid_c", file_mode="100644"
+        )
+
+        tree.add(entry_ac)
+
+        # When
+        result = tree.build_object_ids()
+
+        # Then
+        assert len(result) == 4
+        assert sorted(result, key=lambda x: x.entry_name) == [
+            tree.get_entry("."),
+            tree.get_entry("./a"),
+            tree.get_entry("./a/b"),
+            tree.get_entry("./a/c.txt"),
+        ]
+
+        def check_tree_id(tree_entry: TreeEntry):
+            for child in tree_entry.children:
+                if child.entry_type == "tree" and child.entry_object_id is None:
+                    check_tree_id(child)
+            for child in tree_entry.children:
+                assert child.tree_id == tree_entry.entry_object_id
+
+        assert tree.root_entry is not None
+        check_tree_id(tree.root_entry)
