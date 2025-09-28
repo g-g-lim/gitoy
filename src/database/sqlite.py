@@ -58,6 +58,7 @@ class SQLite:
         sql = f"INSERT INTO {entity.table_name()} ({', '.join(columns)}) VALUES ({placeholders})"
         cursor.execute(sql, values)
         conn.commit()
+        return entity
 
     def insert_many(self, entities: list[Entity]):
         if len(entities) == 0:

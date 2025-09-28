@@ -9,17 +9,17 @@ class CommitStore:
         self.database = database
 
     # TODO: config 구현 후 계정 정보 조회 기능 추가 설정
-    def save_commit(self, target_tree_id: str, message: str) -> Commit:
-        commit_datetime = datetime.now()
+    def save_commit(self, ref_tree_id: str, message: str) -> Commit:
+        commit_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         commit_data = {
-            "tree_id": target_tree_id,
+            "tree_id": ref_tree_id,
             "author_name": "",
             "author_email": "",
             "author_date": commit_datetime,
             "committer_name": "",
             "committer_email": "",
             "committer_date": commit_datetime,
-            "message": str,
+            "message": message,
             "created_at": commit_datetime,
         }
         hash_data = "\n".join(commit_data.values())
