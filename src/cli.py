@@ -7,6 +7,7 @@ import fire
 import sys
 
 from repository.blob_store import BlobStore
+from repository.commit_store import CommitStore
 from repository.compress_file import CompressFile
 from repository.convert import Convert
 from repository.hash_file import HashFile
@@ -80,6 +81,7 @@ def main():
     path_validator = PathValidator(worktree, index_store)
     tree_store = TreeStore(database)
     tree_diff = TreeDiff(index_store, tree_store)
+    commit_store = CommitStore(database)
     repository = Repository(
         database,
         repository_path,
@@ -93,6 +95,7 @@ def main():
         path_validator,
         tree_store,
         tree_diff,
+        commit_store,
     )
     console = Console()
     commands = [

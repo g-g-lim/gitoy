@@ -1,10 +1,3 @@
-"""
-Test suite for TreeDiff class.
-
-Tests the diff method including detection of added, modified,
-and deleted files between index and commit tree.
-"""
-
 import datetime
 import pytest
 from database.database import Database
@@ -17,14 +10,18 @@ from repository.tree_diff import TreeDiff
 @pytest.fixture
 def sample_commit():
     """Create a sample commit for testing."""
+    commit_datetime = datetime.datetime.now()
     return Commit(
         tree_id="sample_tree_123",
-        committer_name="Test Committer",
-        committer_email="test@example.com",
+        author_name="",
+        author_email="",
+        author_date=commit_datetime,
+        committer_name="",
+        committer_email="",
         message="Test commit",
         object_id="test_commit_123",
-        committer_date=datetime.datetime.now(),
-        created_at=datetime.datetime.now(),
+        committer_date=commit_datetime,
+        created_at=commit_datetime,
     )
 
 
@@ -112,7 +109,7 @@ class TestTreeDiff:
         """Test diff when files exist in commit tree but not in index."""
         # Arrange
         repository.init()
-        database.sqlite.insert(sample_commit)
+        database.create_commit(sample_commit)
         tree_id = sample_commit.tree_id
 
         # Create tree entries (files in commit)
@@ -133,7 +130,7 @@ class TestTreeDiff:
             ),
         ]
 
-        database.sqlite.insert_many(tree_entries)
+        database.create_tree_entries(tree_entries)
 
         # Add root tree entry
         database.sqlite.insert(
@@ -149,7 +146,6 @@ class TestTreeDiff:
         # Act
         result = tree_diff.diff(sample_commit)
 
-        # Assert - Note: This test will initially fail due to bug in original code
         assert result is not None
         assert result.is_empty() is False
         assert len(result.added) == 0

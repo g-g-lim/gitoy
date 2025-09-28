@@ -128,9 +128,12 @@ class Database:
     def delete_index_entries(self, entries: list[IndexEntry]) -> None:
         return self.sqlite.delete_many(entries)
 
-    def get_tree_entry(self, object_id: str, entry_type: str) -> TreeEntry | None:
+    def get_tree_entry(
+        self, object_id: str, tree_id: str, entry_type: str
+    ) -> TreeEntry | None:
         tree_entries = self.sqlite.select(
-            f"SELECT * FROM {TreeEntry.table_name()} WHERE entry_object_id = '{object_id}' and entry_type = '{entry_type}'"
+            f"SELECT * FROM {TreeEntry.table_name()} WHERE entry_object_id = ? and tree_id = ? and entry_type = ?",
+            (object_id, tree_id, entry_type),
         )
         return TreeEntry(**tree_entries[0]) if tree_entries else None
 
@@ -140,8 +143,14 @@ class Database:
         )
         return [TreeEntry(**tree_entry) for tree_entry in tree_entries]
 
+    def create_tree_entries(self, tree_entries: list[TreeEntry]) -> None:
+        return self.sqlite.insert_many(tree_entries)
+
     def get_commit(self, object_id: str) -> Optional[Commit]:
         commits = self.sqlite.select(
             f"SELECT * FROM {Commit.table_name()} WHERE object_id = '{object_id}'"
         )
         return Commit(**commits[0]) if commits else None
+
+    def create_commit(self, commit: Commit):
+        return self.sqlite.insert(commit)

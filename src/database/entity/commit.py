@@ -12,6 +12,9 @@ class Commit(Entity):
     Attributes:
         object_id: SHA-1/SHA-256 hash (primary key)
         tree_id: Root tree object_id
+        author_name: Author name
+        author_email: Author email
+        author_date: Author timestamp
         committer_name: Committer name
         committer_email: Committer email
         committer_date: Committer timestamp
@@ -21,6 +24,9 @@ class Commit(Entity):
 
     object_id: str  # Primary key
     tree_id: str
+    author_name: str
+    author_email: str
+    author_date: datetime
     committer_name: str
     committer_email: str
     committer_date: datetime
@@ -36,6 +42,9 @@ class Commit(Entity):
         return [
             "object_id TEXT PRIMARY KEY",
             "tree_id TEXT",
+            "author_name TEXT",
+            "author_email TEXT",
+            "author_date DATETIME",
             "committer_name TEXT",
             "committer_email TEXT",
             "committer_date DATETIME",

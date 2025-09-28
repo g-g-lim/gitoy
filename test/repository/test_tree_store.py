@@ -1,10 +1,3 @@
-"""
-Test suite for TreeStore class.
-
-Tests the build_commit_tree method including tree building,
-caching mechanism, and error handling.
-"""
-
 from database.database import Database
 
 from database.entity.tree_entry import TreeEntry

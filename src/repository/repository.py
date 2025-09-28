@@ -1,6 +1,7 @@
 from pathlib import Path
 from custom_types import StatusData
 from repository.blob_store import BlobStore
+from repository.commit_store import CommitStore
 from repository.compress_file import CompressFile
 from repository.index_diff import IndexDiff
 from repository.index_store import IndexStore
@@ -30,8 +31,9 @@ class Repository:
         path_validator: PathValidator,
         tree_store: TreeStore,
         tree_diff: TreeDiff,
+        commit_store: CommitStore,
     ):
-        self.db = database
+        self.database = database
         self.path = repository_path
         self.worktree = worktree
         self.compress_file = compress_file
@@ -43,25 +45,26 @@ class Repository:
         self.path_validator = path_validator
         self.tree_store = tree_store
         self.tree_diff = tree_diff
+        self.commit_store = commit_store
 
     @property
     def worktree_path(self):
         return self.path.worktree_path
 
     def is_initialized(self):
-        return self.path.get_repo_dir() is not None and self.db.is_initialized()
+        return self.path.get_repo_dir() is not None and self.database.is_initialized()
 
     def init(self):
         repo_dir = self.path.create_repo_dir()
-        self.db.init()
-        self.db.create_main_branch()
+        self.database.init()
+        self.database.create_main_branch()
         return repo_dir
 
     def list_branches(self):
-        return self.db.list_branches()
+        return self.database.list_branches()
 
     def get_head_branch(self):
-        return self.db.get_head_branch()
+        return self.database.get_head_branch()
 
     # TODO: commit hash 를 참조하는 브랜치 생성하는 경우 처리
     def create_branch(self, name: str, commit_hash: str | None = None):
@@ -72,11 +75,11 @@ class Repository:
             return Result.Fail(f"Branch {create_ref_name} already exists")
 
         if head_branch.target_object_id is None:
-            self.db.update_ref(head_branch, {"ref_name": create_ref_name})
+            self.database.update_ref(head_branch, {"ref_name": create_ref_name})
             head_branch.ref_name = create_ref_name
             return Result.Ok({"ref": head_branch, "new": False})
 
-        new_branch = self.db.create_branch(name, head_branch.target_object_id)
+        new_branch = self.database.create_branch(name, head_branch.target_object_id)
         return Result.Ok({"ref": new_branch, "new": True})
 
     def update_head_branch(self, branch_name: str):
@@ -87,19 +90,19 @@ class Repository:
         if prev_ref_name == create_ref_name:
             return Result.Fail(f"Branch {create_ref_name} already exists")
 
-        self.db.update_ref(head_branch, {"ref_name": create_ref_name})
+        self.database.update_ref(head_branch, {"ref_name": create_ref_name})
         head_branch.ref_name = create_ref_name
         return Result.Ok(head_branch)
 
     # TODO: 브랜치 삭제 시 참조되지 않는 커밋 삭제 처리
     def delete_branch(self, name: str):
         ref_name = f"refs/heads/{name}"
-        branch = self.db.get_branch(ref_name)
+        branch = self.database.get_branch(ref_name)
         if branch is None:
             return Result.Fail(f"Branch {ref_name} not found")
         if branch.head:
             return Result.Fail(f"Branch {ref_name} is the head branch")
-        self.db.delete_branch(branch)
+        self.database.delete_branch(branch)
         return Result.Ok(None)
 
     def compress(self, path: Path) -> bytes:
@@ -153,7 +156,7 @@ class Repository:
             ],
         }
 
-        head_commit = self.db.get_commit(head_branch.target_object_id)
+        head_commit = self.database.get_commit(head_branch.target_object_id)
         tree_diff_result = self.tree_diff.diff(head_commit)
         staged = {
             "added": [
@@ -176,3 +179,23 @@ class Repository:
                 "untracked": untracked,
             }
         )
+
+    def commit(self, message: str):
+        head_branch = self.get_head_branch()
+        head_commit = self.database.get_commit(head_branch.target_object_id)
+
+        tree_diff_result = self.tree_diff.diff(head_commit)
+        commit_tree = tree_diff_result.tree
+        for entry in tree_diff_result.added:
+            commit_tree.add(entry)
+        for entry in tree_diff_result.modified:
+            commit_tree.update(entry)
+        for entry in tree_diff_result.deleted:
+            commit_tree.remove(entry)
+
+        updated_entries = commit_tree.build_object_ids()
+        commit_ref_tree = self.tree_store.save_commit_tree(
+            commit_tree.root_entry, updated_entries
+        )
+        commit = self.commit_store.save_commit(commit_ref_tree.entry_object_id, message)
+        head_branch.target_object_id = commit.object_id

@@ -9,7 +9,7 @@ class TreeStore:
         self.database = database
 
     def build_commit_tree(self, root_tree_id: str) -> Optional[Tree]:
-        root_tree = self.database.get_tree_entry(root_tree_id, "tree")
+        root_tree = self.database.get_tree_entry(root_tree_id, "", "tree")
         tree = Tree(root_tree)
         if root_tree is None:
             return tree
@@ -48,3 +48,25 @@ class TreeStore:
                     )
 
         return tree
+
+    def save_commit_tree(self, root_tree: TreeEntry, tree_entries: list[TreeEntry]):
+        saved_root_tree = self.database.get_tree_entry(
+            root_tree.entry_object_id, None, "tree"
+        )
+        if saved_root_tree is not None:
+            return saved_root_tree
+
+        should_create_entries = []
+        for entry in tree_entries:
+            saved_entry = self.database.get_tree_entry(
+                entry.entry_object_id,
+                entry.tree_id,
+                entry.entry_type,
+            )
+            if saved_entry is not None:
+                continue
+            should_create_entries.append(entry)
+
+        self.database.create_index_entries(should_create_entries)
+
+        return root_tree

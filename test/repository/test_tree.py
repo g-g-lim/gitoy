@@ -165,7 +165,7 @@ class TestTreeAddUpdateDelete:
         assert entry_a.entry_object_id is None
         assert entry_b.entry_object_id is None
 
-    def test_tree_with_renamed_directory(self):
+    def test_tree_update_renamed_directory(self):
         # Given
         tree = Tree()
         original_entry = IndexEntry(
@@ -195,7 +195,9 @@ class TestTreeAddUpdateDelete:
         assert new_entry.entry_name == "file.txt"
         assert new_entry.entry_object_id == "same_oid"
 
-    def test_tree_build_object_ids(self):
+
+class TestTreeBuildObjectIds:
+    def test_add_files_with_empty_tree(self):
         # Given
         tree = Tree()
         entry_c = IndexEntry(
@@ -243,7 +245,7 @@ class TestTreeAddUpdateDelete:
             blob_d,
         ]
 
-    def test_tree_build_object_ids_when_extra_add(self):
+    def test_add_after_add(self):
         # Given
         tree = Tree()
         entry_c = IndexEntry(
@@ -308,7 +310,7 @@ class TestTreeAddUpdateDelete:
         assert tree.get_entry("./a/b").entry_object_id != before_tree_b_id
         assert tree.get_entry(".").entry_object_id != before_root_entry_id
 
-    def test_tree_build_object_ids_when_remove(self):
+    def test_remove(self):
         # Given
         tree = Tree()
         entry_c = IndexEntry(
@@ -354,7 +356,7 @@ class TestTreeAddUpdateDelete:
             blob_d,
         ]
 
-    def test_tree_build_object_ids_when_modified(self):
+    def test_update(self):
         tree = Tree()
         entry_c = IndexEntry(
             file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
@@ -416,7 +418,7 @@ class TestTreeAddUpdateDelete:
             blob_d,
         ]
 
-    def test_tree_build_object_ids_when_duplicate_structure(self):
+    def test_update_duplicate_structure(self):
         # Given
         tree = Tree()
         entry_abc = IndexEntry(
@@ -443,7 +445,7 @@ class TestTreeAddUpdateDelete:
             tree.get_entry("./b/c.txt"),
         ]
 
-    def test_tree_build_object_ids_for_check_tree_id(self):
+    def test_check_tree_entry_ids(self):
         # Given
         tree = Tree()
         entry_abc = IndexEntry(
@@ -485,3 +487,72 @@ class TestTreeAddUpdateDelete:
 
         assert tree.root_entry is not None
         check_tree_id(tree.root_entry)
+
+    def test_tree_id_consistency_when_add(self):
+        # Given
+        tree = Tree()
+        entry_ab = IndexEntry(
+            file_path="./a/b.txt", object_id="oid_b", file_mode="100644"
+        )
+        tree.add(entry_ab)
+
+        tree.build_object_ids()
+        assert tree.root_entry is not None
+        one_entry_id = tree.root_entry.entry_object_id
+
+        tree = Tree()
+        tree.add(entry_ab)
+
+        tree.build_object_ids()
+
+        assert tree.root_entry is not None
+        other_entry_id = tree.root_entry.entry_object_id
+        assert one_entry_id == other_entry_id
+
+    def test_tree_id_consistency_when_update(self):
+        # Given
+        tree = Tree()
+        entry_ab = IndexEntry(
+            file_path="./a/b.txt", object_id="oid_b", file_mode="100644"
+        )
+        tree.add(entry_ab)
+        update_entry_ab = IndexEntry(
+            file_path="./a/b.txt", object_id="oid_bcdef", file_mode="100644"
+        )
+        tree.update(update_entry_ab)
+
+        tree.build_object_ids()
+        assert tree.root_entry is not None
+        one_entry_id = tree.root_entry.entry_object_id
+
+        tree = Tree()
+        tree.add(entry_ab)
+        tree.update(update_entry_ab)
+
+        tree.build_object_ids()
+
+        assert tree.root_entry is not None
+        other_entry_id = tree.root_entry.entry_object_id
+        assert one_entry_id == other_entry_id
+
+    def test_tree_id_consistency_after_update_on_same_tree(self):
+        # Given
+        tree = Tree()
+        entry_ab = IndexEntry(
+            file_path="./a/b.txt", object_id="oid_b", file_mode="100644"
+        )
+        tree.add(entry_ab)
+        tree.remove(entry_ab)
+
+        tree.build_object_ids()
+        assert tree.root_entry is not None
+        before_entry_id = tree.root_entry.entry_object_id
+
+        tree.add(entry_ab)
+        tree.remove(entry_ab)
+
+        tree.build_object_ids()
+
+        assert tree.root_entry is not None
+        after_entry_id = tree.root_entry.entry_object_id
+        assert before_entry_id == after_entry_id

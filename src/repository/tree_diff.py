@@ -20,9 +20,9 @@ class TreeDiffResult:
 
 
 class TreeDiff:
-    def __init__(self, index_store: IndexStore, TreeStore: TreeStore):
+    def __init__(self, index_store: IndexStore, tree_store: TreeStore):
         self.index_store = index_store
-        self.tree_store = TreeStore
+        self.tree_store = tree_store
 
     def diff(self, commit: Optional[Commit]) -> TreeDiffResult:
         index_entries = self.index_store.find_all()
