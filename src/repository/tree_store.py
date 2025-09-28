@@ -49,14 +49,16 @@ class TreeStore:
 
         return tree
 
-    def save_commit_tree(self, root_tree: TreeEntry, tree_entries: list[TreeEntry]):
+    def save_commit_tree(
+        self, root_tree: TreeEntry, tree_entries: list[TreeEntry]
+    ) -> TreeEntry:
         saved_root_tree = self.database.get_tree_entry(
-            root_tree.entry_object_id, None, "tree"
+            root_tree.entry_object_id, "", "tree"
         )
         if saved_root_tree is not None:
             return saved_root_tree
 
-        should_create_entries = []
+        should_create_entries = [root_tree]
         for entry in tree_entries:
             saved_entry = self.database.get_tree_entry(
                 entry.entry_object_id,

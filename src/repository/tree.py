@@ -39,6 +39,10 @@ class Tree:
     def has_entry(self, path):
         return self.get_entry(path) is not None
 
+    @property
+    def entry_count(self):
+        return self.index.size
+
     def add(self, index_entry: IndexEntry):
         paths = accumulate_paths(index_entry.file_path)
         parent_tree_entry: Optional[TreeEntry] = None

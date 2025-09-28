@@ -5,6 +5,8 @@ from repository.repository import Repository
 from repository.tree_store import TreeStore
 from repository.tree import Tree
 
+from test.util import check_parent_child_id
+
 
 class TestTreeStoreBuildCommitTree:
     """Test cases for TreeStore.build_commit_tree method."""
@@ -322,3 +324,335 @@ class TestTreeStoreBuildCommitTree:
         assert result.index.get("root/level1/level2/test.txt") is not result.index.get(
             "root/level2/test.txt"
         )
+
+
+class TestTreeStoreSaveCommitTree:
+    def test_save_commit_tree(
+        self, tree_store: TreeStore, repository: Repository, database: Database
+    ):
+        # Given
+        repository.init()
+        root_tree_id = "root_tree_123"
+        level1_tree_id = "level1_tree_456"
+        level2_tree_id = "level2_tree_789"
+
+        # Structure:
+        # ./
+        #   level1/
+        #     level2/
+        #       deep_file.txt
+
+        root_entries = [
+            TreeEntry(
+                tree_id=root_tree_id,
+                entry_name="level1",
+                entry_mode="040000",
+                entry_object_id=level1_tree_id,
+                entry_type="tree",
+            )
+        ]
+
+        level1_entries = [
+            TreeEntry(
+                tree_id=level1_tree_id,
+                entry_name="level2",
+                entry_mode="040000",
+                entry_object_id=level2_tree_id,
+                entry_type="tree",
+            )
+        ]
+
+        level2_entries = [
+            TreeEntry(
+                tree_id=level2_tree_id,
+                entry_name="deep_file.txt",
+                entry_mode="100644",
+                entry_object_id="blob_deep",
+                entry_type="blob",
+            )
+        ]
+
+        root_entry = TreeEntry(
+            tree_id="",
+            entry_name=".",
+            entry_mode="040000",
+            entry_object_id=root_tree_id,
+            entry_type="tree",
+        )
+
+        # When
+        tree_store.save_commit_tree(
+            root_entry, root_entries + level1_entries + level2_entries
+        )
+
+        # Then
+        tree = tree_store.build_commit_tree(root_tree_id)
+        assert tree is not None
+        assert tree.root_entry is not None
+        check_parent_child_id(tree.root_entry)
+        assert tree.get_entry("./level1").entry_object_id == level1_tree_id
+        assert tree.get_entry("./level1/level2").entry_object_id == level2_tree_id
+        assert (
+            tree.get_entry("./level1/level2/deep_file.txt").entry_object_id
+            == "blob_deep"
+        )
+
+    def test_save_commit_tree_with_duplicate_structure(
+        self, tree_store: TreeStore, repository: Repository, database: Database
+    ):
+        # Given
+        repository.init()
+        root_tree_id = "root_tree_123"
+        level1_tree_id = "level1_tree_456"
+        level2_tree_id = "level2_tree_789"
+
+        # Structure:
+        # ./
+        #   level1/
+        #     level2/
+        #       deep_file.txt
+        #  level2/
+        #    deep_file.txt
+
+        root_entries = [
+            TreeEntry(
+                tree_id=root_tree_id,
+                entry_name="level1",
+                entry_mode="040000",
+                entry_object_id=level1_tree_id,
+                entry_type="tree",
+            ),
+            TreeEntry(
+                tree_id=root_tree_id,
+                entry_name="level2",
+                entry_mode="040000",
+                entry_object_id=level2_tree_id,
+                entry_type="tree",
+            ),
+        ]
+
+        level1_entries = [
+            TreeEntry(
+                tree_id=level1_tree_id,
+                entry_name="level2",
+                entry_mode="040000",
+                entry_object_id=level2_tree_id,
+                entry_type="tree",
+            )
+        ]
+
+        level2_entries = [
+            TreeEntry(
+                tree_id=level2_tree_id,
+                entry_name="deep_file.txt",
+                entry_mode="100644",
+                entry_object_id="blob_deep",
+                entry_type="blob",
+            )
+        ]
+
+        root_entry = TreeEntry(
+            tree_id="",
+            entry_name=".",
+            entry_mode="040000",
+            entry_object_id=root_tree_id,
+            entry_type="tree",
+        )
+
+        # When
+        tree_store.save_commit_tree(
+            root_entry, root_entries + level1_entries + level2_entries
+        )
+
+        # Then
+        tree = tree_store.build_commit_tree(root_tree_id)
+        assert tree is not None
+        assert tree.root_entry is not None
+        assert len(database.sqlite.select("SELECT * FROM tree_entry")) == 5
+
+        check_parent_child_id(tree.root_entry)
+
+        assert tree.get_entry("./level1").entry_object_id == level1_tree_id
+        assert tree.get_entry("./level1/level2").entry_object_id == level2_tree_id
+        assert (
+            tree.get_entry("./level1/level2/deep_file.txt").entry_object_id
+            == "blob_deep"
+        )
+        assert tree.get_entry("./level2").entry_object_id == level2_tree_id
+        assert tree.get_entry("./level2/deep_file.txt").entry_object_id == "blob_deep"
+
+    def test_save_commit_tree_with_duplicate_structure_2(
+        self, tree_store: TreeStore, repository: Repository, database: Database
+    ):
+        # Given
+        repository.init()
+        root_tree_id = "root_tree_123"
+        level1_tree_id = "level1_tree_456"
+        level2_tree_id = "level2_tree_789"
+        level3_tree_id = "level3_tree"
+
+        # Structure:
+        # ./
+        #   level1/
+        #     level2/
+        #       level3/
+        #         deep_file.txt
+        #  level2/
+        #    level3/
+        #      deep_file.txt
+
+        root_entries = [
+            TreeEntry(
+                tree_id=root_tree_id,
+                entry_name="level1",
+                entry_mode="040000",
+                entry_object_id=level1_tree_id,
+                entry_type="tree",
+            ),
+            TreeEntry(
+                tree_id=root_tree_id,
+                entry_name="level2",
+                entry_mode="040000",
+                entry_object_id=level2_tree_id,
+                entry_type="tree",
+            ),
+        ]
+
+        level1_entries = [
+            TreeEntry(
+                tree_id=level1_tree_id,
+                entry_name="level2",
+                entry_mode="040000",
+                entry_object_id=level2_tree_id,
+                entry_type="tree",
+            )
+        ]
+
+        level2_entries = [
+            TreeEntry(
+                tree_id=level2_tree_id,
+                entry_name="level3",
+                entry_mode="040000",
+                entry_object_id=level3_tree_id,
+                entry_type="tree",
+            )
+        ]
+
+        level3_entries = [
+            TreeEntry(
+                tree_id=level3_tree_id,
+                entry_name="deep_file.txt",
+                entry_mode="100644",
+                entry_object_id="blob_deep",
+                entry_type="blob",
+            )
+        ]
+
+        root_entry = TreeEntry(
+            tree_id="",
+            entry_name=".",
+            entry_mode="040000",
+            entry_object_id=root_tree_id,
+            entry_type="tree",
+        )
+
+        # When
+        tree_store.save_commit_tree(
+            root_entry,
+            root_entries + level1_entries + level2_entries + level3_entries,
+        )
+
+        # Then
+        tree = tree_store.build_commit_tree(root_tree_id)
+        assert tree is not None
+        assert tree.root_entry is not None
+        assert tree.entry_count == 8
+
+        check_parent_child_id(tree.root_entry)
+
+        assert tree.get_entry("./level1").entry_object_id == level1_tree_id
+        assert tree.get_entry("./level1/level2").entry_object_id == level2_tree_id
+        assert (
+            tree.get_entry("./level1/level2/level3").entry_object_id == level3_tree_id
+        )
+        assert (
+            tree.get_entry("./level1/level2/level3/deep_file.txt").entry_object_id
+            == "blob_deep"
+        )
+        assert tree.get_entry("./level2").entry_object_id == level2_tree_id
+        assert tree.get_entry("./level2/level3").entry_object_id == level3_tree_id
+        assert (
+            tree.get_entry("./level2/level3/deep_file.txt").entry_object_id
+            == "blob_deep"
+        )
+
+        tree_entries_db = database.sqlite.select("SELECT * FROM tree_entry")
+        assert len(tree_entries_db) == 6
+
+    def test_save_commit_tree_on_already_exist_tree(
+        self, tree_store: TreeStore, repository: Repository, database: Database
+    ):
+        # Given
+        repository.init()
+        root_tree_id = "root_tree_123"
+        level1_tree_id = "level1_tree_456"
+        level2_tree_id = "level2_tree_789"
+
+        # Structure:
+        # ./
+        #   level1/
+        #     level2/
+        #       deep_file.txt
+
+        root_entries = [
+            TreeEntry(
+                tree_id=root_tree_id,
+                entry_name="level1",
+                entry_mode="040000",
+                entry_object_id=level1_tree_id,
+                entry_type="tree",
+            )
+        ]
+
+        level1_entries = [
+            TreeEntry(
+                tree_id=level1_tree_id,
+                entry_name="level2",
+                entry_mode="040000",
+                entry_object_id=level2_tree_id,
+                entry_type="tree",
+            )
+        ]
+
+        level2_entries = [
+            TreeEntry(
+                tree_id=level2_tree_id,
+                entry_name="deep_file.txt",
+                entry_mode="100644",
+                entry_object_id="blob_deep",
+                entry_type="blob",
+            )
+        ]
+
+        root_entry = TreeEntry(
+            tree_id="",
+            entry_name=".",
+            entry_mode="040000",
+            entry_object_id=root_tree_id,
+            entry_type="tree",
+        )
+
+        # When
+        tree_store.save_commit_tree(
+            root_entry, root_entries + level1_entries + level2_entries
+        )
+
+        tree = tree_store.build_commit_tree(root_tree_id)
+        assert tree is not None
+
+        tree_store.save_commit_tree(
+            root_entry, root_entries + level1_entries + level2_entries
+        )
+
+        # Then
+        assert len(database.sqlite.select("SELECT * FROM tree_entry")) == 4

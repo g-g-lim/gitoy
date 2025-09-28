@@ -1,7 +1,8 @@
 import hashlib
 from database.entity.index_entry import IndexEntry
-from database.entity.tree_entry import TreeEntry
 from repository.tree import Tree
+
+from test.util import check_parent_child_id
 
 
 class TestTreeAddUpdateDelete:
@@ -478,15 +479,8 @@ class TestTreeBuildObjectIds:
             tree.get_entry("./a/c.txt"),
         ]
 
-        def check_tree_id(tree_entry: TreeEntry):
-            for child in tree_entry.children:
-                if child.entry_type == "tree" and child.entry_object_id is None:
-                    check_tree_id(child)
-            for child in tree_entry.children:
-                assert child.tree_id == tree_entry.entry_object_id
-
         assert tree.root_entry is not None
-        check_tree_id(tree.root_entry)
+        check_parent_child_id(tree.root_entry)
 
     def test_tree_id_consistency_when_add(self):
         # Given
