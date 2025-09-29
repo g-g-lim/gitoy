@@ -512,6 +512,42 @@ class TestRepositoryStatus:
 
 
 class TestRepositoryCommit:
+    def test_no_update_commit(
+        self, repository: Repository, database: Database, tree_store: TreeStore
+    ):
+        repository.init()
+
+        commit = repository.commit("Initial commit")
+
+        assert commit is None
+
+        index_entries = [
+            IndexEntry(
+                file_path="./new_file.txt",
+                object_id="blob_123",
+                file_mode="100644",
+                file_size=100,
+                ctime=1640995200.0,
+                mtime=1640995200.0,
+                dev=1,
+                inode=12345,
+                uid=1000,
+                gid=1000,
+                stage=0,
+                assume_valid=False,
+                skip_worktree=False,
+                intent_to_add=False,
+            ),
+        ]
+
+        database.create_index_entries(index_entries)
+
+        first_commit = repository.commit("Initial commit")
+        assert first_commit is not None
+
+        second_commit = repository.commit("Second commit")
+        assert second_commit is None
+
     def test_initial_commit(
         self, repository: Repository, database: Database, tree_store: TreeStore
     ):
