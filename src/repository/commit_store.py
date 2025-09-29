@@ -1,7 +1,9 @@
 from datetime import datetime
 import hashlib
+from typing import Optional
 from database.database import Database
 from database.entity.commit import Commit
+from database.entity.commit_parent import CommitParent
 
 
 class CommitStore:
@@ -9,7 +11,9 @@ class CommitStore:
         self.database = database
 
     # TODO: config 구현 후 계정 정보 조회 기능 추가 설정
-    def save_commit(self, ref_tree_id: str, message: str) -> Commit:
+    def save_commit(
+        self, ref_tree_id: str, message: str, parent_commit: Optional[Commit] = None
+    ) -> Commit:
         commit_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         commit_data = {
             "tree_id": ref_tree_id,
@@ -28,4 +32,9 @@ class CommitStore:
         sha1.update(hash_data.encode())
         commit_data["object_id"] = sha1.hexdigest()
         new_commit = Commit(**commit_data)
+        if parent_commit is not None:
+            commit_parent = CommitParent(
+                new_commit.object_id, parent_commit.object_id, 0
+            )
+            self.database.create_commit_parent(commit_parent)
         return self.database.create_commit(new_commit)

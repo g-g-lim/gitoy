@@ -136,7 +136,7 @@ class TestTreeDiff:
         database.sqlite.insert(
             TreeEntry(
                 tree_id="",
-                entry_name="root",
+                entry_name=".",
                 entry_mode="040000",
                 entry_object_id=tree_id,
                 entry_type="tree",
@@ -164,7 +164,7 @@ class TestTreeDiff:
         # Add files to index
         index_entries = [
             IndexEntry(
-                file_path="root/modified_file1.txt",
+                file_path="./modified_file1.txt",
                 object_id="blob_new_123",  # Different object_id
                 file_mode="100644",
                 file_size=100,
@@ -180,7 +180,7 @@ class TestTreeDiff:
                 intent_to_add=False,
             ),
             IndexEntry(
-                file_path="root/modified_file2.txt",
+                file_path="./modified_file2.txt",
                 object_id="blob_456",
                 file_mode="100755",  # Different file_mode
                 file_size=200,
@@ -222,7 +222,7 @@ class TestTreeDiff:
         database.sqlite.insert(
             TreeEntry(
                 tree_id="",
-                entry_name="root",
+                entry_name=".",
                 entry_mode="040000",
                 entry_object_id=tree_id,
                 entry_type="tree",
@@ -240,8 +240,8 @@ class TestTreeDiff:
         assert len(result.modified) == 2
 
         modified_paths = [entry.file_path for entry in result.modified]
-        assert "root/modified_file1.txt" in modified_paths
-        assert "root/modified_file2.txt" in modified_paths
+        assert "./modified_file1.txt" in modified_paths
+        assert "./modified_file2.txt" in modified_paths
 
     def test_diff_with_unchanged_files(
         self, tree_diff: TreeDiff, sample_commit: Commit, database: Database, repository
@@ -255,7 +255,7 @@ class TestTreeDiff:
         # Add files to index
         index_entries = [
             IndexEntry(
-                file_path="root/unchanged_file.txt",
+                file_path="./unchanged_file.txt",
                 object_id="blob_same",
                 file_mode="100644",
                 file_size=100,
@@ -290,7 +290,7 @@ class TestTreeDiff:
         database.sqlite.insert(
             TreeEntry(
                 tree_id="",
-                entry_name="root",
+                entry_name=".",
                 entry_mode="040000",
                 entry_object_id=tree_id,
                 entry_type="tree",
@@ -320,7 +320,7 @@ class TestTreeDiff:
         index_entries = [
             # Added file (not in tree)
             IndexEntry(
-                file_path="root/added_file.txt",
+                file_path="./added_file.txt",
                 object_id="blob_added",
                 file_mode="100644",
                 file_size=100,
@@ -337,7 +337,7 @@ class TestTreeDiff:
             ),
             # Modified file (different content)
             IndexEntry(
-                file_path="root/modified_file.txt",
+                file_path="./modified_file.txt",
                 object_id="blob_modified_new",
                 file_mode="100644",
                 file_size=200,
@@ -354,7 +354,7 @@ class TestTreeDiff:
             ),
             # Unchanged file
             IndexEntry(
-                file_path="root/unchanged_file.txt",
+                file_path="./unchanged_file.txt",
                 object_id="blob_unchanged",
                 file_mode="100644",
                 file_size=300,
@@ -406,7 +406,7 @@ class TestTreeDiff:
         database.sqlite.insert(
             TreeEntry(
                 tree_id="",
-                entry_name="root",
+                entry_name=".",
                 entry_mode="040000",
                 entry_object_id=tree_id,
                 entry_type="tree",
@@ -422,11 +422,11 @@ class TestTreeDiff:
 
         # Should have 1 added file
         assert len(result.added) == 1
-        assert result.added[0].file_path == "root/added_file.txt"
+        assert result.added[0].file_path == "./added_file.txt"
 
         # Should have 1 modified file
         assert len(result.modified) == 1
-        assert result.modified[0].file_path == "root/modified_file.txt"
+        assert result.modified[0].file_path == "./modified_file.txt"
 
         # Should have 1 deleted file (this will fail due to bug in original code)
         assert len(result.deleted) == 1
@@ -442,7 +442,7 @@ class TestTreeDiff:
 
         index_entries = [
             IndexEntry(
-                file_path="root/after.txt",
+                file_path="./after.txt",
                 object_id="blob_modified",
                 file_mode="100644",
                 file_size=200,
@@ -476,7 +476,7 @@ class TestTreeDiff:
         database.sqlite.insert(
             TreeEntry(
                 tree_id="",
-                entry_name="root",
+                entry_name=".",
                 entry_mode="040000",
                 entry_object_id=tree_id,
                 entry_type="tree",
@@ -492,11 +492,11 @@ class TestTreeDiff:
 
         # Should have 1 added file
         assert len(result.added) == 1
-        assert result.added[0].file_path == "root/after.txt"
+        assert result.added[0].file_path == "./after.txt"
 
         # Should have 1 deleted file (this will fail due to bug in original code)
         assert len(result.deleted) == 1
-        assert result.deleted[0].file_path == "root/before.txt"
+        assert result.deleted[0].file_path == "./before.txt"
 
     def test_diff_with_nested_directory_structure(
         self, tree_diff: TreeDiff, sample_commit: Commit, database: Database, repository
@@ -511,7 +511,7 @@ class TestTreeDiff:
         # Add files to index with nested paths
         index_entries = [
             IndexEntry(
-                file_path="root/subdir/nested_file.txt",
+                file_path="./subdir/nested_file.txt",
                 object_id="blob_nested_new",
                 file_mode="100644",
                 file_size=100,
@@ -555,7 +555,7 @@ class TestTreeDiff:
         database.sqlite.insert(
             TreeEntry(
                 tree_id="",
-                entry_name="root",
+                entry_name=".",
                 entry_mode="040000",
                 entry_object_id=tree_id,
                 entry_type="tree",
@@ -571,4 +571,4 @@ class TestTreeDiff:
         assert len(result.added) == 0
         assert len(result.deleted) == 0
         assert len(result.modified) == 1
-        assert result.modified[0].file_path == "root/subdir/nested_file.txt"
+        assert result.modified[0].file_path == "./subdir/nested_file.txt"

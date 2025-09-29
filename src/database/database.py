@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Iterable, Optional
+from database.entity.commit_parent import CommitParent
 from database.sqlite import SQLite
 from database.entity.blob import Blob
 from database.entity.commit import Commit
@@ -16,12 +17,25 @@ class Database:
         self.entity_list = [
             Blob,
             Commit,
+            CommitParent,
             Ref,
             Reflog,
             Tag,
             TreeEntry,
             IndexEntry,
         ]
+
+    @staticmethod
+    def build_where_clause(query: str, data: dict) -> tuple[str, Iterable[Any]]:
+        where = []
+        params = []
+        for key, value in data.items():
+            if value is not None:
+                where.append(f"{key} = ?")
+                params.append(value)
+            else:
+                where.append(f"{key} IS NULL")
+        return query + " WHERE " + " AND ".join(where), params
 
     def is_initialized(self) -> bool:
         return (
@@ -128,12 +142,16 @@ class Database:
     def delete_index_entries(self, entries: list[IndexEntry]) -> None:
         return self.sqlite.delete_many(entries)
 
-    def get_tree_entry(
-        self, object_id: str, tree_id: str, entry_type: str
-    ) -> TreeEntry | None:
+    def get_tree_entry(self, data: dict) -> TreeEntry | None:
+        query, params = self.build_where_clause(
+            f"SELECT * FROM {TreeEntry.table_name()}", data
+        )
+        tree_entries = self.sqlite.select(query, params)
+        return TreeEntry(**tree_entries[0]) if tree_entries else None
+
+    def get_root_tree_entry(self, object_id: str) -> TreeEntry | None:
         tree_entries = self.sqlite.select(
-            f"SELECT * FROM {TreeEntry.table_name()} WHERE entry_object_id = ? and tree_id = ? and entry_type = ?",
-            (object_id, tree_id, entry_type),
+            f"SELECT * FROM {TreeEntry.table_name()} WHERE entry_object_id = '{object_id}' and entry_type = 'tree' and entry_name = '.'",
         )
         return TreeEntry(**tree_entries[0]) if tree_entries else None
 
@@ -142,6 +160,9 @@ class Database:
             f"SELECT * FROM {TreeEntry.table_name()} WHERE tree_id = '{tree_id}'"
         )
         return [TreeEntry(**tree_entry) for tree_entry in tree_entries]
+
+    def create_tree_entry(self, tree_entry: TreeEntry) -> None:
+        return self.sqlite.insert(tree_entry)
 
     def create_tree_entries(self, tree_entries: list[TreeEntry]) -> None:
         return self.sqlite.insert_many(tree_entries)
@@ -152,5 +173,14 @@ class Database:
         )
         return Commit(**commits[0]) if commits else None
 
+    def get_commit_children(self, parent_id: str) -> list[CommitParent]:
+        commit_parents = self.sqlite.select(
+            f"SELECT * FROM {CommitParent.table_name()} WHERE parent_id = '{parent_id}'"
+        )
+        return [CommitParent(**parent) for parent in commit_parents]
+
     def create_commit(self, commit: Commit):
         return self.sqlite.insert(commit)
+
+    def create_commit_parent(self, commit_parent: CommitParent):
+        return self.sqlite.insert(commit_parent)

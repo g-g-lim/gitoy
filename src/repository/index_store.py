@@ -18,6 +18,7 @@ class IndexStore:
     def update(self, entries: list[IndexEntry]) -> Result:
         if not entries:
             return Result.Ok([])
+        # TODO 왜 이렇게 했지..?
         self.database.delete_index_entries(entries)
         self.database.create_index_entries(entries)
         return Result.Ok(entries)

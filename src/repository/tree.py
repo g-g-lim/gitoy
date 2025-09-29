@@ -120,6 +120,7 @@ class Tree:
             for child in tree_entry.children:
                 if child.entry_type == "tree" and child.entry_object_id is None:
                     _hash_tree_entry(child)
+
             sorted_children = sorted(tree_entry.children, key=lambda x: x.entry_name)
             content = "\n".join(child.hashable_str for child in sorted_children)
             sha1 = hashlib.sha1()

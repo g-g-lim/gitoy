@@ -194,8 +194,14 @@ class Repository:
             commit_tree.remove(entry)
 
         updated_entries = commit_tree.build_object_ids()
-        commit_ref_tree = self.tree_store.save_commit_tree(
-            commit_tree.root_entry, updated_entries
+
+        commit_ref_tree = self.tree_store.save_commit_tree(updated_entries)
+        new_commit = self.commit_store.save_commit(
+            commit_ref_tree.entry_object_id, message, head_commit
         )
-        commit = self.commit_store.save_commit(commit_ref_tree.entry_object_id, message)
-        head_branch.target_object_id = commit.object_id
+
+        self.database.update_ref(
+            head_branch, {"target_object_id": new_commit.object_id}
+        )
+
+        return new_commit

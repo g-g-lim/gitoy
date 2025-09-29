@@ -58,7 +58,7 @@ class TestTreeStoreBuildCommitTree:
         database.sqlite.insert(
             TreeEntry(
                 tree_id="",
-                entry_name="root",
+                entry_name=".",
                 entry_mode="040000",
                 entry_object_id=root_tree_id,
                 entry_type="tree",
@@ -124,7 +124,7 @@ class TestTreeStoreBuildCommitTree:
         database.sqlite.insert(
             TreeEntry(
                 tree_id="",
-                entry_name="root",
+                entry_name=".",
                 entry_mode="040000",
                 entry_object_id=root_tree_id,
                 entry_type="tree",
@@ -152,14 +152,14 @@ class TestTreeStoreBuildCommitTree:
 
         # Check that the tree cache contains entries
         assert result.index.size == 4
-        assert result.index.get("root") is not None
-        assert result.index.get("root").entry_object_id == root_tree_id
-        assert result.index.get("root/subdir") is not None
-        assert result.index.get("root/subdir").entry_object_id == sub_tree_id
-        assert result.index.get("root/subdir/file2.txt") is not None
-        assert result.index.get("root/subdir/file2.txt").entry_object_id == "blob_2"
-        assert result.index.get("root/file1.txt") is not None
-        assert result.index.get("root/file1.txt").entry_object_id == "blob_1"
+        assert result.index.get(".") is not None
+        assert result.index.get(".").entry_object_id == root_tree_id
+        assert result.index.get("./subdir") is not None
+        assert result.index.get("./subdir").entry_object_id == sub_tree_id
+        assert result.index.get("./subdir/file2.txt") is not None
+        assert result.index.get("./subdir/file2.txt").entry_object_id == "blob_2"
+        assert result.index.get("./file1.txt") is not None
+        assert result.index.get("./file1.txt").entry_object_id == "blob_1"
 
     def test_build_commit_tree_deeply_nested_structure(
         self, tree_store: TreeStore, repository: Repository, database: Database
@@ -172,7 +172,7 @@ class TestTreeStoreBuildCommitTree:
         level2_tree_id = "level2_tree_789"
 
         # Structure:
-        # root/
+        # ./
         #   level1/
         #     level2/
         #       deep_file.txt
@@ -214,7 +214,7 @@ class TestTreeStoreBuildCommitTree:
         database.sqlite.insert(
             TreeEntry(
                 tree_id="",
-                entry_name="root",
+                entry_name=".",
                 entry_mode="040000",
                 entry_object_id=root_tree_id,
                 entry_type="tree",
@@ -231,10 +231,10 @@ class TestTreeStoreBuildCommitTree:
 
         # Verify the nested structure was built
         assert result.index.size == 4
-        assert result.index.get("root") is not None
-        assert result.index.get("root/level1") is not None
-        assert result.index.get("root/level1/level2") is not None
-        assert result.index.get("root/level1/level2/deep_file.txt") is not None
+        assert result.index.get(".") is not None
+        assert result.index.get("./level1") is not None
+        assert result.index.get("./level1/level2") is not None
+        assert result.index.get("./level1/level2/deep_file.txt") is not None
 
     def test_build_commit_tree_duplicated_structure(
         self, tree_store: TreeStore, repository: Repository, database: Database
@@ -247,7 +247,7 @@ class TestTreeStoreBuildCommitTree:
         level2_tree_id = "level2_tree_789"
 
         # Structure: level2 directory, file is duplicated
-        # root/
+        # ./
         #   level1/
         #     level2/
         #       test.txt
@@ -298,7 +298,7 @@ class TestTreeStoreBuildCommitTree:
         database.sqlite.insert(
             TreeEntry(
                 tree_id="",
-                entry_name="root",
+                entry_name=".",
                 entry_mode="040000",
                 entry_object_id=root_tree_id,
                 entry_type="tree",
@@ -315,14 +315,14 @@ class TestTreeStoreBuildCommitTree:
 
         # Verify the nested structure was built
         assert result.index.size == 6
-        assert result.index.get("root") is not None
-        assert result.index.get("root/level1") is not None
-        assert result.index.get("root/level1/level2") is not None
-        assert result.index.get("root/level1/level2/test.txt") is not None
-        assert result.index.get("root/level2") is not None
-        assert result.index.get("root/level2/test.txt") is not None
-        assert result.index.get("root/level1/level2/test.txt") is not result.index.get(
-            "root/level2/test.txt"
+        assert result.index.get(".") is not None
+        assert result.index.get("./level1") is not None
+        assert result.index.get("./level1/level2") is not None
+        assert result.index.get("./level1/level2/test.txt") is not None
+        assert result.index.get("./level2") is not None
+        assert result.index.get("./level2/test.txt") is not None
+        assert result.index.get("./level1/level2/test.txt") is not result.index.get(
+            "./level2/test.txt"
         )
 
 
@@ -382,7 +382,7 @@ class TestTreeStoreSaveCommitTree:
 
         # When
         tree_store.save_commit_tree(
-            root_entry, root_entries + level1_entries + level2_entries
+            root_entries + level1_entries + level2_entries + [root_entry]
         )
 
         # Then
@@ -461,14 +461,15 @@ class TestTreeStoreSaveCommitTree:
 
         # When
         tree_store.save_commit_tree(
-            root_entry, root_entries + level1_entries + level2_entries
+            root_entries + level1_entries + level2_entries + [root_entry]
         )
 
         # Then
         tree = tree_store.build_commit_tree(root_tree_id)
         assert tree is not None
         assert tree.root_entry is not None
-        assert len(database.sqlite.select("SELECT * FROM tree_entry")) == 5
+        tree_entries = database.sqlite.select("SELECT * FROM tree_entry")
+        assert len(tree_entries) == 5
 
         check_parent_child_id(tree.root_entry)
 
@@ -558,8 +559,11 @@ class TestTreeStoreSaveCommitTree:
 
         # When
         tree_store.save_commit_tree(
-            root_entry,
-            root_entries + level1_entries + level2_entries + level3_entries,
+            root_entries
+            + level1_entries
+            + level2_entries
+            + level3_entries
+            + [root_entry]
         )
 
         # Then
@@ -644,14 +648,14 @@ class TestTreeStoreSaveCommitTree:
 
         # When
         tree_store.save_commit_tree(
-            root_entry, root_entries + level1_entries + level2_entries
+            root_entries + level1_entries + level2_entries + [root_entry]
         )
 
         tree = tree_store.build_commit_tree(root_tree_id)
         assert tree is not None
 
         tree_store.save_commit_tree(
-            root_entry, root_entries + level1_entries + level2_entries
+            root_entries + level1_entries + level2_entries + [root_entry]
         )
 
         # Then
