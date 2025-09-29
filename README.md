@@ -10,6 +10,7 @@ for my toy project.
 - File tracking with hash-based content storage
 - SQLite database for metadata persistence
 - Zstandard compression for efficient storage
+- Commit and commit log operations
 
 ## Installation
 
@@ -17,6 +18,7 @@ for my toy project.
 git clone <repository-url>
 cd gitoy-2
 uv sync --extra dev
+uv pip install . -e
 ```
 
 ## Usage
