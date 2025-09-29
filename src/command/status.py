@@ -58,19 +58,6 @@ class Status:
                 )
             self._console.info("")
 
-        if unstaged["modified"] or unstaged["deleted"]:
-            self._console.info("unstaged")
-            self._console.info("")
-            for file_path in unstaged["modified"]:
-                self._console.log(
-                    f"modified: {file_path.relative_to(worktree_path)}", "yellow"
-                )
-            for file_path in unstaged["deleted"]:
-                self._console.log(
-                    f"deleted: {file_path.relative_to(worktree_path)}", "red"
-                )
-            self._console.info("")
-
         if untracked:
             self._console.info("untracked")
             self._console.info("")

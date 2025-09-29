@@ -1,5 +1,7 @@
 from pathlib import Path
+from typing import Optional
 from custom_types import StatusData
+from database.entity.commit import Commit
 from repository.blob_store import BlobStore
 from repository.commit_store import CommitStore
 from repository.compress_file import CompressFile
@@ -180,11 +182,14 @@ class Repository:
             }
         )
 
-    def commit(self, message: str):
+    def commit(self, message: str) -> Optional[Commit]:
         head_branch = self.get_head_branch()
         head_commit = self.database.get_commit(head_branch.target_object_id)
 
         tree_diff_result = self.tree_diff.diff(head_commit)
+        if tree_diff_result.is_empty():
+            return None
+
         commit_tree = tree_diff_result.tree
         for entry in tree_diff_result.added:
             commit_tree.add(entry)

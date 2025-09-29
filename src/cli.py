@@ -3,6 +3,7 @@
 Gitoy CLI - A simple File Version Control CLI tool built with Python Fire
 """
 
+from command.commit import Commit
 import fire
 import sys
 
@@ -103,6 +104,7 @@ def main():
         Branch(repository, console),
         Add(repository, console),
         Status(repository, console),
+        Commit(repository, console),
     ]
     app = GitoyCLI(commands)
     fire.Fire(app)
