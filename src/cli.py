@@ -3,7 +3,6 @@
 Gitoy CLI - A simple File Version Control CLI tool built with Python Fire
 """
 
-from command.commit import Commit
 import fire
 import sys
 
@@ -22,6 +21,8 @@ from database.sqlite import SQLite
 from command.branch import Branch
 from command.add import Add
 from command.status import Status
+from command.commit import Commit
+from command.log import Log
 from repository.tree_diff import TreeDiff
 from repository.tree_store import TreeStore
 from repository.worktree import Worktree
@@ -42,6 +43,8 @@ class GitoyCLI:
     - branch: List, create, or delete branches
     - add: Add a file to the Gitoy repository index
     - status: Show the working tree status
+    - commit: Record changes to the Gitoy repository
+    - log: Show commit logs
     """
 
     def __init__(self, commands):
@@ -105,6 +108,7 @@ def main():
         Add(repository, console),
         Status(repository, console),
         Commit(repository, console),
+        Log(repository, console),
     ]
     app = GitoyCLI(commands)
     fire.Fire(app)

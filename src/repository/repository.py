@@ -210,3 +210,10 @@ class Repository:
         )
 
         return new_commit
+
+    def log(self) -> list[Commit]:
+        head_branch = self.get_head_branch()
+        if head_branch.target_object_id is None:
+            return []
+        commit_logs = self.commit_store.list_commit_logs(head_branch.target_object_id)
+        return commit_logs

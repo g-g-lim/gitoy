@@ -173,9 +173,15 @@ class Database:
         )
         return Commit(**commits[0]) if commits else None
 
-    def get_commit_children(self, parent_id: str) -> list[CommitParent]:
+    def get_commit_children(self, parent_object_id: str) -> list[CommitParent]:
+        commit_children = self.sqlite.select(
+            f"SELECT * FROM {CommitParent.table_name()} WHERE parent_id = '{parent_object_id}'"
+        )
+        return [CommitParent(**child) for child in commit_children]
+
+    def get_commit_parents(self, child_object_id: str):
         commit_parents = self.sqlite.select(
-            f"SELECT * FROM {CommitParent.table_name()} WHERE parent_id = '{parent_id}'"
+            f"SELECT * FROM {CommitParent.table_name()} WHERE commit_id = '{child_object_id}'"
         )
         return [CommitParent(**parent) for parent in commit_parents]
 

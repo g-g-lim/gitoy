@@ -38,3 +38,20 @@ class CommitStore:
             )
             self.database.create_commit_parent(commit_parent)
         return self.database.create_commit(new_commit)
+
+    # TODO 2개 이상의 parent 에 대한 처리
+    def list_commit_logs(self, commit_object_id: str) -> list[Commit]:
+        current = self.database.get_commit(commit_object_id)
+        if current is None:
+            return []
+        commits: list[Commit] = [current]
+        while current:
+            parents = self.database.get_commit_parents(current.object_id)
+            if not parents:
+                break
+            parent = parents[0]
+            current = self.database.get_commit(parent.parent_id)
+            if current is not None:
+                commits.append(current)
+
+        return commits

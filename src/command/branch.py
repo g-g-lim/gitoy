@@ -1,3 +1,4 @@
+from typing import Optional
 from repository.repository import Repository
 from util.console import Console
 
@@ -20,7 +21,7 @@ class Branch:
             else:
                 self._console.info(branch.branch_name)
 
-    def create(self, name: str, commit_hash: str):
+    def create(self, name: str, commit_hash: Optional[str] = None):
         result = self._repository.create_branch(name, commit_hash)
         if result.success:
             if result.value["new"]:
