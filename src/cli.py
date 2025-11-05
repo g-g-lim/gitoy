@@ -6,6 +6,8 @@ Gitoy CLI - A simple File Version Control CLI tool built with Python Fire
 import fire
 import sys
 
+import zstandard
+
 from repository.blob_store import BlobStore
 from repository.commit_store import CommitStore
 from repository.compress_file import CompressFile
@@ -15,20 +17,20 @@ from repository.index_diff import IndexDiff
 from repository.index_store import IndexStore
 from repository.path_validator import PathValidator
 from repository.repository import Repository
-from command.init import Init
+from repository.tree_diff import TreeDiff
+from repository.tree_store import TreeStore
+from repository.worktree import Worktree
+from repository.repo_path import RepositoryPath
 from database.database import Database
 from database.sqlite import SQLite
+from command.init import Init
 from command.branch import Branch
 from command.add import Add
 from command.status import Status
 from command.commit import Commit
 from command.log import Log
-from repository.tree_diff import TreeDiff
-from repository.tree_store import TreeStore
-from repository.worktree import Worktree
-from repository.repo_path import RepositoryPath
+from command.checkout import Checkout
 from util.console import Console
-import zstandard
 
 
 class GitoyCLI:
@@ -109,6 +111,7 @@ def main():
         Status(repository, console),
         Commit(repository, console),
         Log(repository, console),
+        Checkout(repository, console),
     ]
     app = GitoyCLI(commands)
     fire.Fire(app)
