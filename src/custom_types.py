@@ -10,4 +10,5 @@ ReadableBuffer = Union[bytes, bytearray, memoryview]
 class StatusData(TypedDict):
     branch_name: str
     unstaged: dict[str, list[Path]]
+    staged: dict[str, list[Path]]
     untracked: list[Path]
