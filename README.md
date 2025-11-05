@@ -16,25 +16,37 @@ for my toy project.
 
 ```bash
 git clone <repository-url>
-cd gitoy-2
+cd gitoy
 uv sync --extra dev
-uv pip install . -e
+
+# Install globally
+uv tool install .
+```
+
+After installation, you can use `gitoy` command anywhere:
+
+```bash
+gitoy --help
+gitoy version
 ```
 
 ## Usage
 
 ```bash
 # Initialize a repository
-uv run gitoy init
+gitoy init
 
 # List branches
-uv run gitoy branch
+gitoy branch
 
 # Add files to index
-uv run gitoy add file1.txt file2.txt
+gitoy add file1.txt file2.txt
 
-# Show version
-uv run gitoy version
+# Create a commit
+gitoy commit -m "Your commit message"
+
+# View commit history
+gitoy log
 ```
 
 ## Requirements
