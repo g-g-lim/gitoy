@@ -22,5 +22,5 @@ __all__ = [
     "Tag",
     "Ref",
     "IndexEntry",
-    "Reflog"
-] 
+    "Reflog",
+]

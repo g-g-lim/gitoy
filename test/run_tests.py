@@ -12,14 +12,15 @@ import sys
 import subprocess
 from pathlib import Path
 
+
 def main():
     """Run tests using pytest with proper environment setup."""
     # Get project root directory
     project_root = Path(__file__).parent.parent
-    
+
     # Build pytest command - use uv run for consistent environment
     cmd = ["uv", "run", "pytest", "test/test_repository.py"]
-    
+
     # Handle command line arguments
     if len(sys.argv) > 1:
         if "--verbose" in sys.argv or "-v" in sys.argv:
@@ -35,27 +36,28 @@ def main():
                 return 1
     else:
         cmd.append("-v")  # Default to verbose
-    
+
     # Add coverage if pytest-cov is available
     try:
         # Check if pytest-cov is available
         result = subprocess.run(
-            ["uv", "run", "python", "-c", "import pytest_cov"], 
-            capture_output=True, 
-            cwd=project_root
+            ["uv", "run", "python", "-c", "import pytest_cov"],
+            capture_output=True,
+            cwd=project_root,
         )
         if result.returncode == 0:
             cmd.extend(["--cov=src", "--cov-report=term-missing"])
     except Exception:
         pass  # Continue without coverage
-    
+
     # Run tests
     print(f"Running command: {' '.join(cmd)}")
     print(f"Working directory: {project_root}")
     print("=" * 50)
-    
+
     result = subprocess.run(cmd, cwd=project_root)
     return result.returncode
 
+
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

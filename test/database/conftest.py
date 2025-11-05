@@ -19,7 +19,7 @@ def sqlite(sqlite_db_path):
         sqlite.truncate_all()
 
 
-@pytest.fixture(scope="function")  
+@pytest.fixture(scope="function")
 def database(sqlite):
     database = Database(sqlite)
     database.init()

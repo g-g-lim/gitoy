@@ -17,4 +17,4 @@ def init_command(repository: Repository, console: Console):
 
 @pytest.fixture(scope="function")
 def status_command(repository: Repository, console: Console):
-    return Status(repository, console)  
+    return Status(repository, console)

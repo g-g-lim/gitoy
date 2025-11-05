@@ -1,7 +1,7 @@
 from termcolor import colored
 
-class Console:
 
+class Console:
     def info(self, message: str):
         self.log(message, "white")
 

@@ -14,7 +14,7 @@ class Result[T]:
         operation was successful.
     """
 
-    def __init__(self, success: bool, value: T, error: str):
+    def __init__(self, success: bool, value: T | None, error: str | None):
         self.success = success
         self.error = error
         self.value = value
@@ -26,7 +26,7 @@ class Result[T]:
 
     def __str__(self):
         if self.success:
-            return f'[Success]'  # noqa: F541
+            return f"[Success]"  # noqa: F541
         else:
             return f'[Failure] "{self.error}"'
 
@@ -37,11 +37,11 @@ class Result[T]:
             return f'<Result success={self.success}, message="{self.error}">'
 
     @classmethod
-    def Fail(cls, error: str) -> 'Result':
+    def Fail(cls, error: str) -> "Result":
         """Create a Result object for a failed operation."""
         return cls(False, value=None, error=error)
 
     @classmethod
-    def Ok(cls, value: T) -> 'Result':
+    def Ok(cls, value: T) -> "Result":
         """Create a Result object for a successful operation."""
         return cls(True, value=value, error=None)

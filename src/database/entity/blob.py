@@ -9,7 +9,7 @@ from database.entity.entity import Entity
 class Blob(Entity):
     """
     Git blob object representing file content
-    
+
     Attributes:
         object_id: SHA-1/SHA-256 hash (primary key)
         data: Raw file content
@@ -18,12 +18,13 @@ class Blob(Entity):
         mime_type: MIME type (optional)
         created_at: Object creation time
     """
+
     object_id: str  # Primary key
     data: bytes
     size: int
     created_at: datetime
     encoding: Optional[str] = None
-    mime_type: Optional[str] = None 
+    mime_type: Optional[str] = None
 
     @staticmethod
     def primary_key_column():
@@ -43,5 +44,3 @@ class Blob(Entity):
             "encoding TEXT",
             "mime_type TEXT",
         ]
-
-    

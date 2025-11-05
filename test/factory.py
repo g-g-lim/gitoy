@@ -1,13 +1,14 @@
 import random
 import time
-from database.entity.index_entry import IndexEntry
+
+from src.database.entity.index_entry import IndexEntry
 
 
-def random_index_entry(file_path = None) -> IndexEntry:
+def random_index_entry(file_path=None) -> IndexEntry:
     """Create a random IndexEntry fixture for testing."""
     if file_path is None:
         file_path = f"test/file{random.randint(1, 1000)}.txt"
-    
+
     return IndexEntry(
         file_path=file_path,
         object_id=f"{random.randint(1000000000, 9999999999):010d}{random.randint(1000000000, 9999999999):010d}",
@@ -22,5 +23,5 @@ def random_index_entry(file_path = None) -> IndexEntry:
         stage=random.randint(0, 3),
         assume_valid=random.choice([True, False]),
         skip_worktree=random.choice([True, False]),
-        intent_to_add=random.choice([True, False])
+        intent_to_add=random.choice([True, False]),
     )

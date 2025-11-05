@@ -8,7 +8,7 @@ from database.entity.entity import Entity
 class Reflog(Entity):
     """
     Git reflog entry tracking reference changes
-    
+
     Attributes:
         ref_name: Reference name (part of composite primary key)
         timestamp: When change occurred (part of composite primary key)
@@ -19,6 +19,7 @@ class Reflog(Entity):
         message: Reflog message
         sequence: Sequence number
     """
+
     ref_name: str  # Primary key component
     timestamp: datetime  # Primary key component
     old_object_id: str
@@ -26,7 +27,7 @@ class Reflog(Entity):
     committer_name: str
     committer_email: str
     message: str
-    sequence: int 
+    sequence: int
 
     @staticmethod
     def table_name():

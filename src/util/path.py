@@ -1,5 +1,3 @@
-
-
 def normalize_path(path: str):
     if path.startswith("."):
         return path

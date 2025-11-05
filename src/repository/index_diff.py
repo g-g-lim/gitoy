@@ -11,14 +11,15 @@ class IndexDiffResult:
         self.modified: list[IndexEntry] = []
 
     def is_empty(self):
-        return len(self.added) == 0 and len(self.deleted) == 0 and len(self.modified) == 0
+        return (
+            len(self.added) == 0 and len(self.deleted) == 0 and len(self.modified) == 0
+        )
 
     def should_create_blob_entries(self):
         return self.added + self.modified
 
 
 class IndexDiff:
-
     def __init__(self, index_store: IndexStore, worktree: Worktree, convert: Convert):
         self.index_store = index_store
         self.worktree = worktree
@@ -32,11 +33,17 @@ class IndexDiff:
         diff_result = IndexDiffResult()
 
         for worktree_entry in worktree_entries:
-            if not any(index_entry.file_path == worktree_entry.file_path for index_entry in index_entries):
+            if not any(
+                index_entry.file_path == worktree_entry.file_path
+                for index_entry in index_entries
+            ):
                 diff_result.added.append(worktree_entry)
 
         for index_entry in index_entries:
-            if not any(index_entry.file_path == worktree_entry.file_path for worktree_entry in worktree_entries):
+            if not any(
+                index_entry.file_path == worktree_entry.file_path
+                for worktree_entry in worktree_entries
+            ):
                 diff_result.deleted.append(index_entry)
 
         for index_entry in index_entries:

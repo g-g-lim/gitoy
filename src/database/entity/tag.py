@@ -8,7 +8,7 @@ from database.entity.entity import Entity
 class Tag(Entity):
     """
     Git tag object
-    
+
     Attributes:
         object_id: SHA-1/SHA-256 hash (primary key)
         tag_name: Tag name
@@ -21,6 +21,7 @@ class Tag(Entity):
         size: Tag size in bytes
         created_at: Object creation time
     """
+
     object_id: str  # Primary key
     tag_name: str
     tagged_object_id: str
@@ -30,7 +31,7 @@ class Tag(Entity):
     tagger_date: datetime
     message: str
     size: int
-    created_at: datetime 
+    created_at: datetime
 
     @staticmethod
     def table_name():

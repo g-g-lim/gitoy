@@ -9,7 +9,7 @@ from database.entity.entity import Entity
 class Ref(Entity):
     """
     Git reference (branch, tag, remote, etc.)
-    
+
     Attributes:
         ref_name: Reference name like refs/heads/main, refs/tags/v1.0 (primary key)
         ref_type: Type of reference (branch, tag, remote, etc.)
@@ -19,6 +19,7 @@ class Ref(Entity):
         updated_at: Last update time
         namespace: Namespace (worktree, etc.)
     """
+
     ref_name: str  # Primary key
     ref_type: str
     is_symbolic: bool
@@ -43,7 +44,7 @@ class Ref(Entity):
     @staticmethod
     def primary_key_column():
         return "ref_name"
-    
+
     @staticmethod
     def table_name():
         return "ref"

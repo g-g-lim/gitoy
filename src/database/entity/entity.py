@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class Entity:
-
     @property
     def primary_key(self):
         return getattr(self, self.primary_key_column())
@@ -15,6 +15,6 @@ class Entity:
     def primary_key_column():
         raise NotImplementedError("Subclasses must implement this method")
 
-    @staticmethod 
+    @staticmethod
     def table_name():
         raise NotImplementedError("Subclasses must implement this method")
