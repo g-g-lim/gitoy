@@ -379,11 +379,14 @@ class TestRepositoryStatus:
         result = repository.status()
 
         assert result.success is True
-        status_data = result.value
-        assert status_data["branch_name"] == "main"
-        assert status_data["unstaged"]["modified"] == []
-        assert status_data["unstaged"]["deleted"] == []
-        assert status_data["untracked"] == []
+        status_result = result.value
+        assert status_result is not None
+        assert status_result.branch_name == "main"
+        assert status_result.unstaged is not None
+        assert status_result.staged is not None
+        assert status_result.unstaged.modified == []
+        assert status_result.unstaged.deleted == []
+        assert status_result.unstaged.added == []
 
     def test_status_with_untracked_files(
         self, repository: Repository, test_directory: Path
@@ -400,11 +403,13 @@ class TestRepositoryStatus:
             result = repository.status()
 
             assert result.success is True
-            status_data = result.value
-            assert status_data["branch_name"] == "main"
-            assert path1 in status_data["untracked"]
-            assert path2 in status_data["untracked"]
-            assert len(status_data["untracked"]) == 2
+            status_result = result.value
+            assert status_result is not None
+            assert status_result.unstaged is not None
+            assert status_result.staged is not None
+            assert path1 in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.added]
+            assert path2 in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.added]
+            assert len(status_result.unstaged.added) == 2
 
     def test_status_with_unstaged_modified_files(
         self, repository: Repository, test_directory: Path
@@ -423,11 +428,13 @@ class TestRepositoryStatus:
             result = repository.status()
 
             assert result.success is True
-            status_data = result.value
-            assert status_data["branch_name"] == "main"
-            assert path in status_data["unstaged"]["modified"]
-            assert status_data["unstaged"]["deleted"] == []
-            assert status_data["untracked"] == []
+            status_result = result.value
+            assert status_result is not None
+            assert status_result.unstaged is not None
+            assert status_result.staged is not None
+            assert path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.modified]
+            assert status_result.unstaged.deleted == []
+            assert status_result.unstaged.added == []
 
     def test_status_with_unstaged_deleted_files(
         self, repository: Repository, test_directory: Path
@@ -447,11 +454,13 @@ class TestRepositoryStatus:
             result = repository.status()
 
             assert result.success is True
-            status_data = result.value
-            assert status_data["branch_name"] == "main"
-            assert path in status_data["unstaged"]["deleted"]
-            assert status_data["unstaged"]["modified"] == []
-            assert status_data["untracked"] == []
+            status_result = result.value
+            assert status_result is not None
+            assert status_result.unstaged is not None
+            assert status_result.staged is not None
+            assert path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.deleted]
+            assert status_result.unstaged.modified == []
+            assert status_result.unstaged.added == []
 
     def test_status_mixed_file_states(
         self, repository: Repository, test_directory: Path
@@ -476,11 +485,13 @@ class TestRepositoryStatus:
             result = repository.status()
 
             assert result.success is True
-            status_data = result.value
-            assert status_data["branch_name"] == "main"
-            assert untracked_path in status_data["untracked"]
-            assert modified_path in status_data["unstaged"]["modified"]
-            assert deleted_path in status_data["unstaged"]["deleted"]
+            status_result = result.value
+            assert status_result is not None
+            assert status_result.unstaged is not None
+            assert status_result.staged is not None
+            assert untracked_path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.added]
+            assert modified_path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.modified]
+            assert deleted_path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.deleted]
 
     def test_status_mixed_file_states_2(
         self, repository: Repository, test_directory: Path, test_repo_directory: Path
@@ -507,12 +518,14 @@ class TestRepositoryStatus:
             result = repository.status()
 
             assert result.success is True
-            status_data = result.value
-            assert status_data["branch_name"] == "main"
-            assert untracked_path in status_data["untracked"]
-            assert untracked_path2 in status_data["untracked"]
-            assert modified_path in status_data["unstaged"]["modified"]
-            assert deleted_path in status_data["unstaged"]["deleted"]
+            status_result = result.value
+            assert status_result is not None
+            assert status_result.unstaged is not None
+            assert status_result.staged is not None
+            assert untracked_path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.added]
+            assert untracked_path2 in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.added]
+            assert modified_path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.modified]
+            assert deleted_path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.deleted]
 
 
 class TestRepositoryCommit:

@@ -85,6 +85,9 @@ class IndexEntry(Entity):
 
     def absolute_path(self, root_path: Path):
         return root_path / self.file_path_obj
+    
+    def relative_path(self, root_path: Path):
+        return self.absolute_path(root_path).relative_to(root_path)
 
     @property
     def file_name(self):

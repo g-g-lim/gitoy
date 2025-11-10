@@ -11,6 +11,9 @@ class DiffResult(NamedTuple):
         return (
             len(self.added) == 0 and len(self.modified) == 0 and len(self.deleted) == 0
         )
+        
+    def all(self) -> list[IndexEntry]:
+        return self.added + self.modified + self.deleted
 
 
 class EntryDiff:
@@ -32,6 +35,13 @@ class EntryDiff:
         return [
             self.base[p] for p in self.base if p in self.target and self._is_modified(p)
         ]
+        
+    def diff(self) -> DiffResult:
+        return DiffResult(
+            self.added(),
+            self.modified(),
+            self.deleted(),
+        )
 
     def _is_modified(self, path: str) -> bool:
         base_entry = self.base[path]

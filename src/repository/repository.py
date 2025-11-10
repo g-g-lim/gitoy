@@ -1,7 +1,6 @@
-from collections import namedtuple
 from pathlib import Path
 from typing import Optional
-from custom_types import StatusData
+from custom_types import Changes, StatusResult
 from database.entity.commit import Commit
 from repository.blob_store import BlobStore
 from repository.commit_store import CommitStore
@@ -115,21 +114,12 @@ class Repository:
         index_entries = self.index_store.find_by_paths(paths)
         worktree_paths = self.worktree.find_paths(paths)
         worktree_entries = [self.convert.path_to_index_entry(p) for p in worktree_paths]
-        entry_diff = EntryDiff(worktree_entries, index_entries)
-        diff_result = DiffResult(
-            entry_diff.added(), entry_diff.modified(), entry_diff.deleted()
-        )
-        return diff_result
+        return EntryDiff(worktree_entries, index_entries).diff()
 
     def compare_index_to_tree(
         self, index_entries: list[IndexEntry], tree: Tree
     ) -> DiffResult:
-        diff_result = {}
-        entry_diff = EntryDiff(index_entries, tree.list_index_entries())
-        diff_result = DiffResult(
-            entry_diff.added(), entry_diff.modified(), entry_diff.deleted()
-        )
-        return diff_result
+        return EntryDiff(index_entries, tree.list_index_entries()).diff()
 
     def add_index(self, paths: list[str]):
         result = self.path_validator.validate(paths)
@@ -153,7 +143,7 @@ class Repository:
 
         return Result.Ok(None)
 
-    def status(self) -> Result[StatusData]:
+    def status(self) -> Result[StatusResult]:
         if not self.is_initialized():
             return Result.Fail("Not a gitoy repository")
 
@@ -162,19 +152,13 @@ class Repository:
 
         worktree_path = self.worktree_path
         index_diff_result = self.compare_worktree_to_index([worktree_path.as_posix()])
-        untracked = [
-            entry.absolute_path(worktree_path) for entry in index_diff_result.added
-        ]
-        unstaged = {
-            "modified": [
-                entry.absolute_path(worktree_path)
-                for entry in index_diff_result.modified
-            ],
-            "deleted": [
-                entry.absolute_path(worktree_path)
-                for entry in index_diff_result.deleted
-            ],
-        }
+
+        status_result = StatusResult(branch_name)
+        status_result.unstaged = Changes(index_diff_result.added, index_diff_result.modified, index_diff_result.deleted)
+        status_result.staged = Changes([], [], [])
+        
+        if head_branch.target_object_id is None:
+            return Result.Ok(status_result)
 
         head_commit = self.database.get_commit(head_branch.target_object_id)
         if head_commit:
@@ -184,27 +168,11 @@ class Repository:
         else:
             tree_diff_result = DiffResult([], [], [])
 
-        staged = {
-            "added": [
-                entry.absolute_path(worktree_path) for entry in tree_diff_result.added
-            ],
-            "modified": [
-                entry.absolute_path(worktree_path)
-                for entry in tree_diff_result.modified
-            ],
-            "deleted": [
-                entry.absolute_path(worktree_path) for entry in tree_diff_result.deleted
-            ],
-        }
+        status_result.staged.added = tree_diff_result.added
+        status_result.staged.modified = tree_diff_result.modified 
+        status_result.staged.deleted = tree_diff_result.deleted
 
-        return Result.Ok(
-            {
-                "branch_name": branch_name,
-                "staged": staged,
-                "unstaged": unstaged,
-                "untracked": untracked,
-            }
-        )
+        return Result.Ok(status_result)
 
     def commit(self, message: str) -> Optional[Commit]:
         head_branch = self.get_head_branch()
@@ -250,3 +218,29 @@ class Repository:
             return []
         commit_logs = self.commit_store.list_commit_logs(head_branch.target_object_id)
         return commit_logs
+    
+    def checkout(self, branch_name: str) -> Result:
+        branch_ref_name = f"refs/heads/{branch_name}"
+        branch = self.database.get_branch(branch_ref_name)
+        if branch is None:
+            return Result.Fail(f"Branch '{branch_name}' not found")
+
+        head_branch = self.get_head_branch()
+        if head_branch.ref_name == branch.ref_name:
+            return Result.Ok(None)
+
+        assert branch.target_object_id is not None
+        
+        checkout_commit = self.database.get_commit(branch.target_object_id)
+        assert checkout_commit is not None
+        
+        index_diff_result = self.compare_worktree_to_index([self.worktree_path.as_posix()])
+                
+        checkout_tree = self.tree_store.build_commit_tree(checkout_commit.tree_id)
+        tree_entries = checkout_tree.list_index_entries()
+        
+        # entry_diff = EntryDiff(index_diff_result.all(), tree_entries)
+        
+        self.database.update_ref(head_branch, {"ref_name": branch.ref_name})
+
+        return Result.Ok(None)
