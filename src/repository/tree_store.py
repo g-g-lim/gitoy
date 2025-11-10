@@ -1,4 +1,3 @@
-from typing import Optional
 from database.database import Database
 from repository.tree import Tree
 from database.entity.tree_entry import TreeEntry
@@ -8,7 +7,7 @@ class TreeStore:
     def __init__(self, database: Database):
         self.database = database
 
-    def build_commit_tree(self, root_tree_id: str) -> Optional[Tree]:
+    def build_commit_tree(self, root_tree_id: str) -> Tree:
         root_tree = self.database.get_root_tree_entry(root_tree_id)
         tree = Tree(root_tree)
         if root_tree is None:

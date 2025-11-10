@@ -5,13 +5,14 @@ from database.entity.commit import Commit
 from repository.blob_store import BlobStore
 from repository.commit_store import CommitStore
 from repository.compress_file import CompressFile
-from repository.index_diff import IndexDiff
 from repository.index_store import IndexStore
 from repository.path_validator import PathValidator
 from repository.repo_path import RepositoryPath
 from database.database import Database
 from repository.tree_diff import TreeDiff
 from repository.tree_store import TreeStore
+from database.entity.index_entry import IndexEntry
+from repository.entry_diff import EntryDiff
 from util.result import Result
 from repository.worktree import Worktree
 from repository.hash_file import HashFile
@@ -29,7 +30,6 @@ class Repository:
         index_store: IndexStore,
         blob_store: BlobStore,
         convert: Convert,
-        index_diff: IndexDiff,
         path_validator: PathValidator,
         tree_store: TreeStore,
         tree_diff: TreeDiff,
@@ -43,7 +43,6 @@ class Repository:
         self.index_store = index_store
         self.blob_store = blob_store
         self.convert = convert
-        self.index_diff = index_diff
         self.path_validator = path_validator
         self.tree_store = tree_store
         self.tree_diff = tree_diff
@@ -112,24 +111,35 @@ class Repository:
 
     def hash(self, path: Path) -> str:
         return self.hash_file.hash(path)
+    
+    def compare_worktree_to_index(self, paths: list[str]) -> dict[str, list[IndexEntry]]:
+        index_entries = self.index_store.find_by_paths(paths)
+        worktree_paths = self.worktree.find_paths(paths)
+        worktree_entries = [self.convert.path_to_index_entry(p) for p in worktree_paths]
+        entry_diff = EntryDiff(worktree_entries, index_entries)
+        diff_result = {}
+        diff_result['added'] = entry_diff.added()
+        diff_result['deleted'] = entry_diff.deleted()
+        diff_result['modified'] = entry_diff.modified()
+        return diff_result
 
     def add_index(self, paths: list[str]):
         result = self.path_validator.validate(paths)
         if result.failed:
             return result
 
-        diff_result = self.index_diff.diff(paths)
+        diff_result = self.compare_worktree_to_index(paths)
 
-        if diff_result.is_empty():
+        if len(diff_result['added']) == 0 and len(diff_result['deleted']) == 0 and len(diff_result['modified']) == 0:
             return Result.Ok(None)
 
-        self.index_store.create(diff_result.added)
-        self.index_store.update(diff_result.modified)
-        self.index_store.delete(diff_result.deleted)
+        self.index_store.create(diff_result['added'])
+        self.index_store.update(diff_result['modified'])
+        self.index_store.delete(diff_result['deleted'])
 
         blobs = [
             self.convert.index_entry_to_blob(entry)
-            for entry in diff_result.should_create_blob_entries()
+            for entry in diff_result['added'] + diff_result['modified']
         ]
         self.blob_store.create(blobs)
 
@@ -143,18 +153,18 @@ class Repository:
         branch_name = head_branch.branch_name
 
         worktree_path = self.worktree_path
-        index_diff_result = self.index_diff.diff([worktree_path.as_posix()])
+        index_diff_result = self.compare_worktree_to_index([worktree_path.as_posix()])
         untracked = [
-            entry.absolute_path(worktree_path) for entry in index_diff_result.added
+            entry.absolute_path(worktree_path) for entry in index_diff_result['added']
         ]
         unstaged = {
             "modified": [
                 entry.absolute_path(worktree_path)
-                for entry in index_diff_result.modified
+                for entry in index_diff_result['modified']
             ],
             "deleted": [
                 entry.absolute_path(worktree_path)
-                for entry in index_diff_result.deleted
+                for entry in index_diff_result['deleted']
             ],
         }
 
@@ -184,7 +194,9 @@ class Repository:
 
     def commit(self, message: str) -> Optional[Commit]:
         head_branch = self.get_head_branch()
-        head_commit = self.database.get_commit(head_branch.target_object_id)
+        head_commit = None        
+        if head_branch.target_object_id is not None:
+            head_commit = self.database.get_commit(head_branch.target_object_id)
 
         tree_diff_result = self.tree_diff.diff(head_commit)
         if tree_diff_result.is_empty():

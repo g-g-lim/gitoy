@@ -71,15 +71,105 @@ AI 에게 다시 물어보니 git 에서는 다음과 같이 처리하고 있다
 1. Staged, Unstaged, Untracked 파일 충돌 체크 (fail-fast)
 2. Staged, Unstaged, Untracked 변경사항 백업
 3. Index 전체 재구성 (target 브랜치 커밋 기준)
-4. 변경사항 복원
-5. Working Directory 업데이트
+4. Working Directory 업데이트
+5. 변경사항 복원
+
+## 파일 충돌 케이스
+
+### 1. 추가 (신규 파일)
+
+| 현재 브랜치 상태 | Checkout 브랜치 상태 | 결과 |
+|----------------|-------------------|------|
+| 신규 생성 (untracked) | 같은 파일 존재 (내용 무관) | ❌ **충돌** |
+| 신규 생성 + add (staged) | 같은 파일 존재 + 내용 같음 | ⚠️ checkout 성공하지만 **변경사항 날아감** |
+| 신규 생성 + add (staged) | 같은 파일 존재 + 내용 다름 | ❌ **충돌** |
+| 신규 생성 + add (staged) | 파일 없음 | ✅ **그대로 추가됨** |
+| 신규 생성 (untracked) | 파일 없음 | ✅ **그대로 추가됨** |
+
+### 2. 삭제
+
+| 현재 브랜치 상태 | Checkout 브랜치 상태 | 결과 |
+|----------------|-------------------|------|
+| 삭제 + add (staged) | 같은 파일 존재 + 내용 같음 | ✅ **삭제 그대로 반영** |
+| 삭제 (unstaged) | 같은 파일 존재 + 내용 같음 | ✅ **삭제 그대로 반영** |
+| 삭제 + add (staged) | 같은 파일 존재 + 내용 다름 | ❌ **충돌** |
+| 삭제 (unstaged) | 같은 파일 존재 + 내용 다름 | ⚠️ checkout 성공하지만 **삭제 변경내용 날아감** |
+
+### 3. 수정
+
+| 현재 브랜치 상태 | Checkout 브랜치 상태 | 결과 |
+|----------------|-------------------|------|
+| 수정 (staged) | 같은 파일 존재 + 내용 다름 | ❌ **충돌** |
+| 수정 (unstaged) | 같은 파일 존재 + 내용 다름 | ❌ **충돌** |
+| 수정 (staged) | 같은 파일 존재 + 내용 같음 | ✅ 안전하게 checkout |
+| 수정 (unstaged) | 같은 파일 존재 + 내용 같음 | ✅ 안전하게 checkout |
+
+### 핵심 패턴
+
+- **Staged (add 한 경우)**: Checkout 브랜치에 같은 파일이 있고 내용이 다를 때 충돌
+- **Unstaged 수정**: 수정한 파일이 checkout 브랜치에 있고 내용이 다를 때 충돌
+- **Unstaged 삭제**: 보호 안 됨! 내용 다르면 변경사항 날아감
+- **Untracked (신규 파일)**: Checkout 브랜치에 같은 파일명이 존재하면 무조건 충돌 (내용 무관)
+
+### 단순화된 충돌 로직
+
+| 변경 타입 | Checkout 브랜치 파일 상태 | 결과 |
+|----------|------------------------|------|
+| **추가** | 파일 없음 | ✅ 그대로 가져오기 |
+| **추가** | 파일 있음 + 내용 같음 | ⚠️ 변경사항 버리기 |
+| **추가** | 파일 있음 + 내용 다름 | ❌ **충돌** |
+| **삭제** | 파일 없음 | ⚠️ 변경사항 버리기 |
+| **삭제** | 파일 있음 + 내용 같음 | ✅ 삭제 반영 |
+| **삭제** | 파일 있음 + 내용 다름 | ❌ **충돌** |
+| **수정** | 파일 없음 | ❌ **충돌** |
+| **수정** | 파일 있음 + 내용 같음 | ⚠️ 변경사항 버리기 |
+| **수정** | 파일 있음 + 내용 다름 | ❌ **충돌** |
+
+### 핵심 규칙
+
+1. **Checkout 브랜치 기준**: 모든 판단은 checkout 할 브랜치의 파일 상태 기준
+2. **충돌 조건 (단순화)**:
+   - 추가: Checkout 브랜치에 같은 파일이 있고 내용 다름
+   - 삭제: Checkout 브랜치에 같은 파일이 있고 내용 다름
+   - 수정: Checkout 브랜치에 파일 없음 OR 파일 있고 내용 다름
+3. **Staged/Unstaged 구분 불필요**: 위 규칙은 staged, unstaged 모두 동일하게 적용
 
 ## Staged, Unstaged, Untracked 파일 충돌 체크
 
 - 현재 브랜치의 staged, unstaged, untracked 파일의 index entry 조회
 - checkout 하려는 브랜치의 커밋, 트리, 블롭 객체 탐색
+    - 현재는 스냅샷 트리를 조회하는 메서드만 존재
+    - staged, unstaged entry 데이터만 조회하기 위해서는 index entry path 로 tree 조회하는 메서드 필요
+    - 하지만, 기존에 있는 전체 트리 조회해서 일부 트리만 비교하게 되면 구현은 빨라짐. 일부 최적화는 어려움
+    - 일단 트리 전체 조회해서 처리하고 추후 고도화
 - checkout 브랜치 블롭 객체와 현재 브랜치의 staged, unstaged 블롭 객체의 경로 및 object_id 비교
+    - 이 diff의 목적은? object_id 가 다른 entry가 하나라도 있을 경우 checkout 을 중단하기 위함
+    - tree_diff 클래스는 현재 브랜치의 tree 와 index 를 비교하는 책임을 보유
+    - tree 와 index 를 비교하는 이유는 새로운 커밋에 반영할 entry 를 식별하기 위함
+    - index_diff 클래스는 현재 브랜치의 index 와 worktree 를 비교하는 책임을 보유
+    - checkout diff 는 checkout 할 브랜치의 커밋 tree 와 현재 브랜치의 index 를 비교하는 것
+    - checkout_diff 와 tree_diff 의 차이는 특정 index 만 비교한다는 것과 비교 후 처리가 다름
+    - git 역시 이를 추상화한 diff_options struct 를 활용함
+        ```
+        struct diff_options {
+            // 설정과 상태를 캡슐화
+            // 비교 대상 (tree vs tree, tree vs index 등)
+            // 출력 포맷 (patch, stat, name-only 등)
+        }
+        ```
+    - 접근 1. checkout_conflict_checker 클래스 만들기. checkout 전 충돌에 문제가 없는지 확인하는 책임 보유. 
+        - tree_diff 의 로직을 재사용할 수는 없음. tree builder 만을 활용해서 트리를 만들고 staged, unstaged entry 만 선별해서 비교하기
+        - checkout_conflict_checker 로직
+            - constructor 에 tree_store, index_store 의존성 주입
+            - 다른 브랜치의 커밋과 비교할 staged, unstaged entry 경로를 인자로 전달받아 충돌 확인하는 함수
+    - 접근 2. tree_diff 기존 로직 활용하기
+        - 비교 결과를 크게 세가지로 나눌 수 있음
+        - 파일 없음, 파일 있지만 내용이 같음. 있지만 내용이 다른 세가지
+        - tree_diff 로직을 활용하면 파일 없음은 added 로 파일 있지만 내용 같으면 안나오고, 있지만 내용이 다른 경우는 modified 로 나올 것
+        - 이 결괏값과 staged, unstaged 의 추가, 수정, 삭제 상태를 활용하여 로직 처리
 - 경로가 같고 object_id 가 다르면 충돌로 간주하여 checkout 을 중단하고 오류 메시지 출력. 충돌난 파일명 출력
+    - 추가, 삭제, 변경된 파일별로 다르게 처리해야 하므로 추후 케이스를 고려해야 함
+    - 케이스는 위에 단순화된 충돌 규칙의 표를 따를 것
 - 충돌이 없는 경우 checkout 할 브랜치의 index 와 working tree 에 반영하기 위해 보류
 
 ## Staiging 백업, 복원
@@ -96,10 +186,8 @@ AI 에게 다시 물어보니 git 에서는 다음과 같이 처리하고 있다
 - staged 는 index 에서 조회가능. unstaged, untracked 모두 work tree 에서 index 생성 가능
 - index 전체 재구성 전에 staged, unstaged, untracked entry 를 복원용으로 따로 보관.
 - index 구성이 완료되면 staged 는 index 에 반영하고 unstaged, untracked entry 는 working tree 에 반영한다. index 에 반영하는 것과 working tree 에 반영하는 시점은 다름
-- 생각해보니 unstaged 영역의 파일은 working tree 에 반영하는 프로세스가 필요하지 않아보임. 이유는 이전 브랜치에 이미
-파일 변경사항이 working tree 에 반영되어있기 때문. checkout 하는 과정에서 working tree 는 그대로 활용됨
-- staged 같은 경우 index 에 반영해야 함. checkout 하는 브랜치의 스냅샷에는 존재하지 않고 스냅샷을 기반으로 index 를
-업데이트하는 과정에서 index 를 아예 초기화 시킬 예정. index 를 재구성하고 나면 staged 영역의 index entry 는 추가 반영이 필요함
+- 생각해보니 unstaged 영역의 파일은 working tree 에 반영하는 프로세스가 필요하지 않아보임. 이유는 이전 브랜치에 이미 파일 변경사항이 working tree 에 반영되어있기 때문. checkout 하는 과정에서 working tree 는 그대로 활용됨
+- staged 같은 경우 index 에 반영해야 함. checkout 하는 브랜치의 스냅샷에는 존재하지 않고 스냅샷을 기반으로 index 를 업데이트하는 과정에서 index 를 아예 초기화 시킬 예정. index 를 재구성하고 나면 staged 영역의 index entry 는 추가 반영이 필요함
 - untracked 의 경우 checkout 한 브랜치에서 동일한 이름에 동일한 내용을 가진 파일이 존재할 수 있음. 이 경우 untracked 에서 unstaged 로 변경되어야 함. 사실 이는 상태로 관리하는 것은 아니니 gitoy status 출력 시 unstaged 로 출력되는지 확인할 필요가 있음.
 다만 같은 파일명인데 다른 내용인 경우는 충돌이므로 checkout 중지 필요
 

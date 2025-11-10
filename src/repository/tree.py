@@ -38,6 +38,15 @@ class Tree:
 
     def has_entry(self, path):
         return self.get_entry(path) is not None
+    
+    def list_index_entries(self) -> list[IndexEntry]:
+        return [
+            IndexEntry(
+            file_path=path,
+            file_mode=entry.entry_mode,
+            object_id=entry.entry_object_id) 
+            for path, entry in self.index if entry.entry_object_id is not None and entry.entry_type == "blob"
+        ]
 
     @property
     def entry_count(self):

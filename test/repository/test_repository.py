@@ -8,16 +8,19 @@ error handling, and edge cases.
 from pathlib import Path
 import sys
 import tempfile
+from unittest import mock
 from unittest.mock import patch
 
-from database.database import Database
-from database.entity.commit import Commit
-from database.entity.index_entry import IndexEntry
-from database.entity.blob import Blob
-from database.entity.tree_entry import TreeEntry
-from database.sqlite import SQLite
-from repository.repository import Repository
-from repository.tree_store import TreeStore
+from src.database.database import Database
+from src.database.entity.commit import Commit
+from src.database.entity.index_entry import IndexEntry
+from src.database.entity.blob import Blob
+from src.database.entity.tree_entry import TreeEntry
+from src.database.sqlite import SQLite
+from src.repository.convert import Convert
+from src.repository.repo_path import RepositoryPath
+from src.repository.repository import Repository
+from src.repository.tree_store import TreeStore
 
 # Add src to path
 src_path = Path(__file__).parent.parent / "src"
@@ -1328,3 +1331,192 @@ class TestRepositoryCommit:
 
         commit_children = database.get_commit_children(third_commit.object_id)
         assert len(commit_children) == 0
+
+
+class TestRepositoryCompareIndexToWorktree:
+    def test_diff_added(
+        self,
+        repository: Repository,
+        repository_path: RepositoryPath,
+        convert: Convert,
+        test_file_path: Path,
+    ):
+        repository.init()
+
+        with mock.patch(
+            "os.getcwd", return_value=repository_path.worktree_path.as_posix()
+        ):
+            result = repository.compare_worktree_to_index([test_file_path.parent.name])
+            assert len(result['added']) == 1
+            assert result['added'][0] == convert.path_to_index_entry(test_file_path)
+            assert result['deleted'] == []
+            assert result['modified'] == []
+
+    def test_diff_deleted(
+        self,
+        repository: Repository,
+        convert: Convert,
+        database: Database,
+        test_directory: Path,
+    ):
+        repository.init()
+
+        with mock.patch("os.getcwd", return_value=test_directory.as_posix()):
+            _, _path = tempfile.mkstemp(dir=test_directory)
+            path = Path(_path)
+            index_entry = convert.path_to_index_entry(path)
+            database.create_index_entries([index_entry])
+
+            path.unlink()
+
+            result = repository.compare_worktree_to_index([_path])
+            assert result['added'] == []
+            assert len(result['deleted']) == 1
+            assert result['deleted'][0] == index_entry
+            assert result['modified'] == []
+
+    def test_diff_modified(
+        self,
+        repository: Repository,
+        convert: Convert,
+        database: Database,
+        test_directory: Path,
+    ):
+        repository.init()
+
+        with mock.patch("os.getcwd", return_value=test_directory.as_posix()):
+            _, _path = tempfile.mkstemp(dir=test_directory)
+            path = Path(_path)
+            index_entry = convert.path_to_index_entry(path)
+            database.create_index_entries([index_entry])
+
+            path.write_text("modified")
+
+            result = repository.compare_worktree_to_index([_path])
+            assert result['added'] == []
+            assert result['deleted'] == []
+            assert len(result['modified']) == 1
+            assert result['modified'][0] == convert.path_to_index_entry(path)
+
+    def test_diff_mixed(
+        self,
+        repository: Repository,
+        convert: Convert,
+        database: Database,
+        test_directory: Path,
+    ):
+        repository.init()
+
+        with mock.patch("os.getcwd", return_value=test_directory.as_posix()):
+            _, _path = tempfile.mkstemp(dir=test_directory)
+            path = Path(_path)
+            index_entry = convert.path_to_index_entry(path)
+            database.create_index_entries([index_entry])
+            path.write_text("modified")
+
+            _, _path2 = tempfile.mkstemp(dir=test_directory)
+
+            result = repository.compare_worktree_to_index([_path, _path2])
+            assert len(result['added']) == 1
+            assert result['added'][0] == convert.path_to_index_entry(Path(_path2))
+            assert result['deleted'] == []
+            assert len(result['modified']) == 1
+            assert result['modified'][0] == convert.path_to_index_entry(path)
+
+            path.unlink()
+
+            result = repository.compare_worktree_to_index([_path, _path2])
+            assert len(result['added']) == 1
+            assert len(result['deleted']) == 1
+            assert len(result['modified']) == 0
+
+            path2 = Path(_path2)
+            index_entry2 = convert.path_to_index_entry(path2)
+            database.create_index_entries([index_entry2])
+            path2.write_text("modified")
+
+            result = repository.compare_worktree_to_index([_path, _path2])
+            assert len(result['added']) == 0
+            assert len(result['deleted']) == 1
+            assert len(result['modified']) == 1
+
+            _, _path3 = tempfile.mkstemp(dir=test_directory)
+
+            result = repository.compare_worktree_to_index([_path, _path2, _path3])
+            assert len(result['added']) == 1
+            assert len(result['deleted']) == 1
+            assert len(result['modified']) == 1
+
+            result = repository.compare_worktree_to_index([_path, _path2])
+            assert len(result['added']) == 0
+            assert len(result['deleted']) == 1
+            assert len(result['modified']) == 1
+
+            result = repository.compare_worktree_to_index([_path2, _path3])
+            assert len(result['added']) == 1
+            assert len(result['deleted']) == 0
+            assert len(result['modified']) == 1
+
+    def test_diff_path_changed(
+        self,
+        repository: Repository,
+        convert: Convert,
+        database: Database,
+        test_directory: Path,
+    ):
+        repository.init()
+
+        with mock.patch("os.getcwd", return_value=test_directory.as_posix()):
+            _, _path = tempfile.mkstemp(dir=test_directory)
+            path = Path(_path)
+            index_entry = convert.path_to_index_entry(path)
+            database.create_index_entries([index_entry])
+
+            renamed = path.with_name("renamed")
+            path.rename(renamed)
+
+            result = repository.compare_worktree_to_index([renamed.name])
+            assert len(result['added']) == 1
+            assert result['added'][0] == convert.path_to_index_entry(renamed)
+            assert result['deleted'] == []
+            assert result['modified'] == []
+
+            result = repository.compare_worktree_to_index(["."])
+            assert len(result['added']) == 1
+            assert len(result['deleted']) == 1
+            assert result['modified'] == []
+
+            result = repository.compare_worktree_to_index([f"../{test_directory.name}"])
+            assert len(result['added']) == 1
+            assert len(result['deleted']) == 1
+            assert result['modified'] == []
+
+    def test_diff_on_check_duplicate_path(
+        self,
+        repository: Repository,
+        convert: Convert,
+        database: Database,
+        test_directory: Path,
+    ):
+        repository.init()
+
+        with mock.patch("os.getcwd", return_value=test_directory.as_posix()):
+            _, _path = tempfile.mkstemp(dir=test_directory)
+            path = Path(_path)
+            index_entry = convert.path_to_index_entry(path)
+            database.create_index_entries([index_entry])
+            path.unlink()
+
+            _, _path2 = tempfile.mkstemp(dir=test_directory)
+
+            path2 = Path(_path2)
+            index_entry2 = convert.path_to_index_entry(path2)
+            database.create_index_entries([index_entry2])
+            path2.write_text("modified")
+
+            _, _path3 = tempfile.mkstemp(dir=test_directory)
+
+            result = repository.compare_worktree_to_index([_path, _path2, _path3, "./"])
+            assert len(result['added']) == 1
+            assert len(result['deleted']) == 1
+            assert len(result['modified']) == 1

@@ -1,6 +1,5 @@
 def unique(seq, key=None):
     seen = set()
-    seen_add = seen.add
     for item in seq:
         if key is None:
             value = item
@@ -14,5 +13,5 @@ def unique(seq, key=None):
             value = item[key]
         if value in seen:
             continue
-        seen_add(value)
+        seen.add(value)
         yield item

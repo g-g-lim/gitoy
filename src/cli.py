@@ -13,7 +13,6 @@ from repository.commit_store import CommitStore
 from repository.compress_file import CompressFile
 from repository.convert import Convert
 from repository.hash_file import HashFile
-from repository.index_diff import IndexDiff
 from repository.index_store import IndexStore
 from repository.path_validator import PathValidator
 from repository.repository import Repository
@@ -83,7 +82,6 @@ def main():
     blob_store = BlobStore(database)
     hash_file = HashFile()
     convert = Convert(hash_file, compress_file, repository_path)
-    index_diff = IndexDiff(index_store, worktree, convert)
     path_validator = PathValidator(worktree, index_store)
     tree_store = TreeStore(database)
     tree_diff = TreeDiff(index_store, tree_store)
@@ -97,7 +95,6 @@ def main():
         index_store,
         blob_store,
         convert,
-        index_diff,
         path_validator,
         tree_store,
         tree_diff,

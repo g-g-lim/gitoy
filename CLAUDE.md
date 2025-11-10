@@ -176,6 +176,3 @@ When approaching a new feature:
 Follow this process precisely, always prioritizing clean, well-tested code over quick implementation.
 
 Always write one test at a time, make it run, then improve structure. Always run all the tests (except long-running tests) each time.
-
-## ETC
-If I ask you something in English because I'm bad at English, always leave a comment at the bottom of your reply with the grammar or content of the sentence corrected. I'll study from that.

@@ -8,13 +8,12 @@ from pathlib import Path
 import sys
 import tempfile
 
-from repository.commit_store import CommitStore
-from repository.compress_file import CompressFile
-from repository.convert import Convert
-from repository.hash_file import HashFile
-from repository.index_diff import IndexDiff
-from repository.path_validator import PathValidator
-from repository.tree_diff import TreeDiff
+from src.repository.commit_store import CommitStore
+from src.repository.compress_file import CompressFile
+from src.repository.convert import Convert
+from src.repository.hash_file import HashFile
+from src.repository.path_validator import PathValidator
+from src.repository.tree_diff import TreeDiff
 import zstandard
 
 from src.repository.blob_store import BlobStore
@@ -100,11 +99,6 @@ def convert(hash_file, compress_file, repository_path):
 
 
 @pytest.fixture(scope="function")
-def index_diff(index_store, worktree, convert):
-    return IndexDiff(index_store, worktree, convert)
-
-
-@pytest.fixture(scope="function")
 def path_validator(worktree, index_store):
     return PathValidator(worktree, index_store)
 
@@ -139,7 +133,6 @@ def repository(
     index_store,
     blob_store,
     convert,
-    index_diff,
     path_validator,
     tree_diff,
     tree_store,
@@ -154,7 +147,6 @@ def repository(
         index_store,
         blob_store,
         convert,
-        index_diff,
         path_validator,
         tree_store,
         tree_diff,

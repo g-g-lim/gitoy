@@ -4,6 +4,7 @@ from database.entity.index_entry import IndexEntry
 from repository.index_store import IndexStore
 from repository.tree import Tree
 from repository.tree_store import TreeStore
+from repository.entry_diff import EntryDiff
 
 
 class TreeDiffResult:
@@ -26,34 +27,12 @@ class TreeDiff:
 
     def diff(self, commit: Optional[Commit]) -> TreeDiffResult:
         index_entries = self.index_store.find_all()
-        index_entries_map = {}
-        for index_entry in index_entries:
-            index_entries_map[index_entry.file_path] = index_entry
-
         commit_tree = self.tree_store.build_commit_tree(
             "" if commit is None else commit.tree_id
         )
         diff_result = TreeDiffResult(commit_tree)
-
-        for index_entry in index_entries:
-            tree_entry = commit_tree.get_entry(index_entry.file_path)
-            if tree_entry is None:
-                diff_result.added.append(index_entry)
-            elif (
-                index_entry.file_mode != tree_entry.entry_mode
-                or index_entry.object_id != tree_entry.entry_object_id
-            ):
-                diff_result.modified.append(index_entry)
-
-        for path, tree_entry in commit_tree.index:
-            if tree_entry.entry_type == "tree":
-                continue
-            if path not in index_entries_map:
-                index_entry = IndexEntry(
-                    file_path=path,
-                    file_mode=tree_entry.entry_mode,
-                    object_id=tree_entry.entry_object_id,
-                )
-                diff_result.deleted.append(index_entry)
-
+        entry_diff = EntryDiff(index_entries, commit_tree.list_index_entries())
+        diff_result.added = entry_diff.added()
+        diff_result.deleted = entry_diff.deleted()
+        diff_result.modified = entry_diff.modified()
         return diff_result
