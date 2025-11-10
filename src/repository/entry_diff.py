@@ -1,4 +1,16 @@
+from typing import NamedTuple
 from database.entity.index_entry import IndexEntry
+
+
+class DiffResult(NamedTuple):
+    added: list
+    modified: list
+    deleted: list
+
+    def is_empty(self) -> bool:
+        return (
+            len(self.added) == 0 and len(self.modified) == 0 and len(self.deleted) == 0
+        )
 
 
 class EntryDiff:

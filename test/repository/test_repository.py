@@ -1347,10 +1347,10 @@ class TestRepositoryCompareIndexToWorktree:
             "os.getcwd", return_value=repository_path.worktree_path.as_posix()
         ):
             result = repository.compare_worktree_to_index([test_file_path.parent.name])
-            assert len(result["added"]) == 1
-            assert result["added"][0] == convert.path_to_index_entry(test_file_path)
-            assert result["deleted"] == []
-            assert result["modified"] == []
+            assert len(result.added) == 1
+            assert result.added[0] == convert.path_to_index_entry(test_file_path)
+            assert result.deleted == []
+            assert result.modified == []
 
     def test_diff_deleted(
         self,
@@ -1370,10 +1370,10 @@ class TestRepositoryCompareIndexToWorktree:
             path.unlink()
 
             result = repository.compare_worktree_to_index([_path])
-            assert result["added"] == []
-            assert len(result["deleted"]) == 1
-            assert result["deleted"][0] == index_entry
-            assert result["modified"] == []
+            assert result.added == []
+            assert len(result.deleted) == 1
+            assert result.deleted[0] == index_entry
+            assert result.modified == []
 
     def test_diff_modified(
         self,
@@ -1393,10 +1393,10 @@ class TestRepositoryCompareIndexToWorktree:
             path.write_text("modified")
 
             result = repository.compare_worktree_to_index([_path])
-            assert result["added"] == []
-            assert result["deleted"] == []
-            assert len(result["modified"]) == 1
-            assert result["modified"][0] == convert.path_to_index_entry(path)
+            assert result.added == []
+            assert result.deleted == []
+            assert len(result.modified) == 1
+            assert result.modified[0] == convert.path_to_index_entry(path)
 
     def test_diff_mixed(
         self,
@@ -1417,18 +1417,18 @@ class TestRepositoryCompareIndexToWorktree:
             _, _path2 = tempfile.mkstemp(dir=test_directory)
 
             result = repository.compare_worktree_to_index([_path, _path2])
-            assert len(result["added"]) == 1
-            assert result["added"][0] == convert.path_to_index_entry(Path(_path2))
-            assert result["deleted"] == []
-            assert len(result["modified"]) == 1
-            assert result["modified"][0] == convert.path_to_index_entry(path)
+            assert len(result.added) == 1
+            assert result.added[0] == convert.path_to_index_entry(Path(_path2))
+            assert result.deleted == []
+            assert len(result.modified) == 1
+            assert result.modified[0] == convert.path_to_index_entry(path)
 
             path.unlink()
 
             result = repository.compare_worktree_to_index([_path, _path2])
-            assert len(result["added"]) == 1
-            assert len(result["deleted"]) == 1
-            assert len(result["modified"]) == 0
+            assert len(result.added) == 1
+            assert len(result.deleted) == 1
+            assert len(result.modified) == 0
 
             path2 = Path(_path2)
             index_entry2 = convert.path_to_index_entry(path2)
@@ -1436,26 +1436,26 @@ class TestRepositoryCompareIndexToWorktree:
             path2.write_text("modified")
 
             result = repository.compare_worktree_to_index([_path, _path2])
-            assert len(result["added"]) == 0
-            assert len(result["deleted"]) == 1
-            assert len(result["modified"]) == 1
+            assert len(result.added) == 0
+            assert len(result.deleted) == 1
+            assert len(result.modified) == 1
 
             _, _path3 = tempfile.mkstemp(dir=test_directory)
 
             result = repository.compare_worktree_to_index([_path, _path2, _path3])
-            assert len(result["added"]) == 1
-            assert len(result["deleted"]) == 1
-            assert len(result["modified"]) == 1
+            assert len(result.added) == 1
+            assert len(result.deleted) == 1
+            assert len(result.modified) == 1
 
             result = repository.compare_worktree_to_index([_path, _path2])
-            assert len(result["added"]) == 0
-            assert len(result["deleted"]) == 1
-            assert len(result["modified"]) == 1
+            assert len(result.added) == 0
+            assert len(result.deleted) == 1
+            assert len(result.modified) == 1
 
             result = repository.compare_worktree_to_index([_path2, _path3])
-            assert len(result["added"]) == 1
-            assert len(result["deleted"]) == 0
-            assert len(result["modified"]) == 1
+            assert len(result.added) == 1
+            assert len(result.deleted) == 0
+            assert len(result.modified) == 1
 
     def test_diff_path_changed(
         self,
@@ -1476,20 +1476,20 @@ class TestRepositoryCompareIndexToWorktree:
             path.rename(renamed)
 
             result = repository.compare_worktree_to_index([renamed.name])
-            assert len(result["added"]) == 1
-            assert result["added"][0] == convert.path_to_index_entry(renamed)
-            assert result["deleted"] == []
-            assert result["modified"] == []
+            assert len(result.added) == 1
+            assert result.added[0] == convert.path_to_index_entry(renamed)
+            assert result.deleted == []
+            assert result.modified == []
 
             result = repository.compare_worktree_to_index(["."])
-            assert len(result["added"]) == 1
-            assert len(result["deleted"]) == 1
-            assert result["modified"] == []
+            assert len(result.added) == 1
+            assert len(result.deleted) == 1
+            assert result.modified == []
 
             result = repository.compare_worktree_to_index([f"../{test_directory.name}"])
-            assert len(result["added"]) == 1
-            assert len(result["deleted"]) == 1
-            assert result["modified"] == []
+            assert len(result.added) == 1
+            assert len(result.deleted) == 1
+            assert result.modified == []
 
     def test_diff_on_check_duplicate_path(
         self,
@@ -1517,6 +1517,6 @@ class TestRepositoryCompareIndexToWorktree:
             _, _path3 = tempfile.mkstemp(dir=test_directory)
 
             result = repository.compare_worktree_to_index([_path, _path2, _path3, "./"])
-            assert len(result["added"]) == 1
-            assert len(result["deleted"]) == 1
-            assert len(result["modified"]) == 1
+            assert len(result.added) == 1
+            assert len(result.deleted) == 1
+            assert len(result.modified) == 1

@@ -1,3 +1,4 @@
+from collections import namedtuple
 from pathlib import Path
 from typing import Optional
 from custom_types import StatusData
@@ -12,7 +13,8 @@ from database.database import Database
 from repository.tree_diff import TreeDiff
 from repository.tree_store import TreeStore
 from database.entity.index_entry import IndexEntry
-from repository.entry_diff import EntryDiff
+from repository.entry_diff import DiffResult, EntryDiff
+from src.repository.tree import Tree
 from util.result import Result
 from repository.worktree import Worktree
 from repository.hash_file import HashFile
@@ -112,17 +114,24 @@ class Repository:
     def hash(self, path: Path) -> str:
         return self.hash_file.hash(path)
 
-    def compare_worktree_to_index(
-        self, paths: list[str]
-    ) -> dict[str, list[IndexEntry]]:
+    def compare_worktree_to_index(self, paths: list[str]) -> DiffResult:
         index_entries = self.index_store.find_by_paths(paths)
         worktree_paths = self.worktree.find_paths(paths)
         worktree_entries = [self.convert.path_to_index_entry(p) for p in worktree_paths]
         entry_diff = EntryDiff(worktree_entries, index_entries)
+        diff_result = DiffResult(
+            entry_diff.added(), entry_diff.modified(), entry_diff.deleted()
+        )
+        return diff_result
+
+    def compare_index_to_tree(
+        self, index_entries: list[IndexEntry], tree: Tree
+    ) -> DiffResult:
         diff_result = {}
-        diff_result["added"] = entry_diff.added()
-        diff_result["deleted"] = entry_diff.deleted()
-        diff_result["modified"] = entry_diff.modified()
+        entry_diff = EntryDiff(index_entries, tree.list_index_entries())
+        diff_result = DiffResult(
+            entry_diff.added(), entry_diff.modified(), entry_diff.deleted()
+        )
         return diff_result
 
     def add_index(self, paths: list[str]):
@@ -132,20 +141,16 @@ class Repository:
 
         diff_result = self.compare_worktree_to_index(paths)
 
-        if (
-            len(diff_result["added"]) == 0
-            and len(diff_result["deleted"]) == 0
-            and len(diff_result["modified"]) == 0
-        ):
+        if diff_result.is_empty():
             return Result.Ok(None)
 
-        self.index_store.create(diff_result["added"])
-        self.index_store.update(diff_result["modified"])
-        self.index_store.delete(diff_result["deleted"])
+        self.index_store.create(diff_result.added)
+        self.index_store.update(diff_result.modified)
+        self.index_store.delete(diff_result.deleted)
 
         blobs = [
             self.convert.index_entry_to_blob(entry)
-            for entry in diff_result["added"] + diff_result["modified"]
+            for entry in diff_result.added + diff_result.modified
         ]
         self.blob_store.create(blobs)
 
@@ -161,16 +166,16 @@ class Repository:
         worktree_path = self.worktree_path
         index_diff_result = self.compare_worktree_to_index([worktree_path.as_posix()])
         untracked = [
-            entry.absolute_path(worktree_path) for entry in index_diff_result["added"]
+            entry.absolute_path(worktree_path) for entry in index_diff_result.added
         ]
         unstaged = {
             "modified": [
                 entry.absolute_path(worktree_path)
-                for entry in index_diff_result["modified"]
+                for entry in index_diff_result.modified
             ],
             "deleted": [
                 entry.absolute_path(worktree_path)
-                for entry in index_diff_result["deleted"]
+                for entry in index_diff_result.deleted
             ],
         }
 
@@ -204,21 +209,28 @@ class Repository:
         if head_branch.target_object_id is not None:
             head_commit = self.database.get_commit(head_branch.target_object_id)
 
-        tree_diff_result = self.tree_diff.diff(head_commit)
-        if tree_diff_result.is_empty():
+        commit_tree = self.tree_store.build_commit_tree(
+            "" if head_commit is None else head_commit.tree_id
+        )
+        index_entries = self.index_store.find_all()
+
+        diff_result = self.compare_index_to_tree(index_entries, commit_tree)
+        if diff_result.is_empty():
             return None
 
-        commit_tree = tree_diff_result.tree
-        for entry in tree_diff_result.added:
+        for entry in diff_result.added:
             commit_tree.add(entry)
-        for entry in tree_diff_result.modified:
+        for entry in diff_result.modified:
             commit_tree.update(entry)
-        for entry in tree_diff_result.deleted:
+        for entry in diff_result.deleted:
             commit_tree.remove(entry)
 
         updated_entries = commit_tree.build_object_ids()
 
         commit_ref_tree = self.tree_store.save_commit_tree(updated_entries)
+
+        assert commit_ref_tree.entry_object_id is not None
+
         new_commit = self.commit_store.save_commit(
             commit_ref_tree.entry_object_id, message, head_commit
         )
