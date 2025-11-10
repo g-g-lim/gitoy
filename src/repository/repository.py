@@ -10,7 +10,6 @@ from repository.index_store import IndexStore
 from repository.path_validator import PathValidator
 from repository.repo_path import RepositoryPath
 from database.database import Database
-from repository.tree_diff import TreeDiff
 from repository.tree_store import TreeStore
 from database.entity.index_entry import IndexEntry
 from repository.entry_diff import DiffResult, EntryDiff
@@ -34,7 +33,6 @@ class Repository:
         convert: Convert,
         path_validator: PathValidator,
         tree_store: TreeStore,
-        tree_diff: TreeDiff,
         commit_store: CommitStore,
     ):
         self.database = database
@@ -47,7 +45,6 @@ class Repository:
         self.convert = convert
         self.path_validator = path_validator
         self.tree_store = tree_store
-        self.tree_diff = tree_diff
         self.commit_store = commit_store
 
     @property
@@ -180,7 +177,13 @@ class Repository:
         }
 
         head_commit = self.database.get_commit(head_branch.target_object_id)
-        tree_diff_result = self.tree_diff.diff(head_commit)
+        if head_commit:
+            tree = self.tree_store.build_commit_tree(head_commit.tree_id)
+            index_entries = self.database.list_index_entries()
+            tree_diff_result = self.compare_index_to_tree(index_entries, tree)
+        else:
+            tree_diff_result = DiffResult([], [], [])
+
         staged = {
             "added": [
                 entry.absolute_path(worktree_path) for entry in tree_diff_result.added

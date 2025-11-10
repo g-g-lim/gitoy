@@ -13,7 +13,6 @@ from src.repository.compress_file import CompressFile
 from src.repository.convert import Convert
 from src.repository.hash_file import HashFile
 from src.repository.path_validator import PathValidator
-from src.repository.tree_diff import TreeDiff
 import zstandard
 
 from src.repository.blob_store import BlobStore
@@ -114,11 +113,6 @@ def tree_store(database):
 
 
 @pytest.fixture(scope="function")
-def tree_diff(index_store: IndexStore, tree_store: TreeStore):
-    return TreeDiff(index_store, tree_store)
-
-
-@pytest.fixture(scope="function")
 def commit_store(database: Database):
     return CommitStore(database)
 
@@ -134,7 +128,6 @@ def repository(
     blob_store,
     convert,
     path_validator,
-    tree_diff,
     tree_store,
     commit_store,
 ):
@@ -149,7 +142,6 @@ def repository(
         convert,
         path_validator,
         tree_store,
-        tree_diff,
         commit_store,
     )
 
