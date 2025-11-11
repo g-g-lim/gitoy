@@ -209,7 +209,7 @@ class TestWorktreeFindPaths:
 
             result = worktree.match("../")
             assert len(result) == 2
-            
+
     def test_write(
         self,
         repository: Repository,
@@ -236,7 +236,7 @@ class TestWorktreeFindPaths:
             with open(written_path, "rb") as f:
                 read_content = f.read()
                 assert read_content == content
-                
+
         index_entry = repository.index_store.create(
             [
                 IndexEntry(
@@ -256,7 +256,7 @@ class TestWorktreeFindPaths:
             with open(written_path, "rb") as f:
                 read_content = f.read()
                 assert read_content == content
-                
+
     def test_delete(
         self,
         repository: Repository,
@@ -280,7 +280,7 @@ class TestWorktreeFindPaths:
             content = b"Hello, Gitoy!"
             written_path = worktree.write(index_entry, content)
             assert written_path.is_file()
-            
+
             # delete file
             worktree.delete(index_entry)
             assert not written_path.exists()

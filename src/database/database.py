@@ -108,7 +108,7 @@ class Database:
 
     def create_blobs(self, blobs: list[Blob]) -> None:
         return self.sqlite.insert_many(blobs)
-    
+
     def get_blob(self, object_id: str) -> Optional[Blob]:
         blobs = self.sqlite.select(
             f"SELECT * FROM {Blob.table_name()} WHERE object_id = '{object_id}'"

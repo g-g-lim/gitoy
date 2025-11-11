@@ -238,7 +238,7 @@ class Repository:
         status_result = self.status()
         if status_result.failed:
             return Result.Fail(status_result.error)
-            
+
         changes = status_result.value
 
         assert changes is not None
@@ -257,8 +257,8 @@ class Repository:
 
         checkout_tree = self.tree_store.build_commit_tree(checkout_commit.tree_id)
         current_index_entries = self.index_store.find_all()
-        diff_result = self.compare_index_to_tree( current_index_entries, checkout_tree)
-        
+        diff_result = self.compare_index_to_tree(current_index_entries, checkout_tree)
+
         # Apply changes to worktree
         for entry in diff_result.added:
             blob = self.database.get_blob(entry.object_id)
@@ -270,7 +270,7 @@ class Repository:
             self.worktree.write(entry, blob.data)
         for entry in diff_result.deleted:
             self.worktree.delete(entry)
-                
+
         # Apply changes to index
         self.index_store.delete(diff_result.deleted)
         self.index_store.update(diff_result.modified)

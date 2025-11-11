@@ -32,9 +32,9 @@ class Worktree:
 
     def find_paths(self, paths: list[str]) -> list[Path]:
         return list(unique([p for path in paths for p in self.match(path)], "as_posix"))
-    
+
     def write(self, index_entry: IndexEntry, content: bytes) -> Path:
-        path = index_entry.absolute_path(self.repo_path.worktree_path)        
+        path = index_entry.absolute_path(self.repo_path.worktree_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "wb") as f:
             f.write(content)
@@ -52,5 +52,3 @@ class Worktree:
             except OSError:
                 break
             parent = parent.parent
-            
-        
