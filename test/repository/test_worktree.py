@@ -5,18 +5,12 @@ Tests all Worktree methods including find_paths.
 """
 
 from pathlib import Path
-import sys
 import tempfile
 from unittest.mock import patch
 
-from repository.repository import Repository
-
+from src.database.entity.index_entry import IndexEntry
+from src.repository.repository import Repository
 from src.repository.worktree import Worktree
-
-# Add src to path
-src_path = Path(__file__).parent.parent / "src"
-if str(src_path) not in sys.path:
-    sys.path.insert(0, str(src_path))
 
 
 class TestWorktreeFindPaths:
@@ -215,3 +209,79 @@ class TestWorktreeFindPaths:
 
             result = worktree.match("../")
             assert len(result) == 2
+            
+    def test_write(
+        self,
+        repository: Repository,
+        worktree: Worktree,
+        test_repo_directory: Path,
+    ):
+        repository.init()
+
+        index_entry = repository.index_store.create(
+            [
+                IndexEntry(
+                    path="testfile",
+                    mode="0o100644",
+                    object_id="dummyobjectid",
+                )
+            ]
+        )[0]
+
+        with patch("os.getcwd", return_value=test_repo_directory.as_posix()):
+            # write file
+            content = b"Hello, Gitoy!"
+            written_path = worktree.write(index_entry, content)
+            assert written_path.is_file()
+            with open(written_path, "rb") as f:
+                read_content = f.read()
+                assert read_content == content
+                
+        index_entry = repository.index_store.create(
+            [
+                IndexEntry(
+                    path="./dir/testfile",
+                    mode="0o100644",
+                    object_id="dummyobjectid",
+                )
+            ]
+        )[0]
+
+        with patch("os.getcwd", return_value=test_repo_directory.as_posix()):
+            # write file
+            content = b"Hello, Gitoy!"
+            written_path = worktree.write(index_entry, content)
+            assert written_path.is_file()
+            assert written_path.parent.name == "dir"
+            with open(written_path, "rb") as f:
+                read_content = f.read()
+                assert read_content == content
+                
+    def test_delete(
+        self,
+        repository: Repository,
+        worktree: Worktree,
+        test_repo_directory: Path,
+    ):
+        repository.init()
+
+        index_entry = repository.index_store.create(
+            [
+                IndexEntry(
+                    path="./dir/testfile",
+                    mode="0o100644",
+                    object_id="dummyobjectid",
+                )
+            ]
+        )[0]
+
+        with patch("os.getcwd", return_value=test_repo_directory.as_posix()):
+            # write file
+            content = b"Hello, Gitoy!"
+            written_path = worktree.write(index_entry, content)
+            assert written_path.is_file()
+            
+            # delete file
+            worktree.delete(index_entry)
+            assert not written_path.exists()
+            assert not written_path.parent.exists()
