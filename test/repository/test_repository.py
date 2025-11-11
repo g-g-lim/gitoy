@@ -1924,6 +1924,7 @@ class TestRepositoryCompareIndexToTree:
 
 
 class TestRepositoryCheckout:
+    
     def test_checkout_branch(
         self,
         repository: Repository,
@@ -2048,3 +2049,13 @@ class TestRepositoryCheckout:
                 file_content = f.read()
             assert file_content == "Modified content"
             assert test_file_path.stat().st_mode == path.stat().st_mode
+            
+    def test_checkout_nonexistent_branch(
+        self,
+        repository: Repository,
+    ):
+        repository.init()
+
+        result = repository.checkout("nonexistent-branch")
+        assert not result.success
+        assert result.error == "Branch 'refs/heads/nonexistent-branch' not found"
