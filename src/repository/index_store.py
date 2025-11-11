@@ -1,3 +1,4 @@
+from pathlib import Path
 from database.database import Database
 from database.entity.index_entry import IndexEntry
 from repository.repo_path import RepositoryPath
@@ -28,8 +29,8 @@ class IndexStore:
         self.database.delete_index_entries(entries)
         return entries
 
-    def find_by_paths(self, paths: list[str]) -> list[IndexEntry]:
-        relative_paths = self.repo_path.to_normalized_relative_paths(paths)
+    def find_by_paths(self, paths: list[str | Path]) -> list[IndexEntry]:
+        relative_paths = self.repo_path.normalize_relative_paths(paths)
         return self.database.list_index_entries_by_paths_startwith(relative_paths)
 
     def find_all(self) -> list[IndexEntry]:

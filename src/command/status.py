@@ -24,9 +24,6 @@ class Status:
         staged = status_result.staged
         unstaged = status_result.unstaged
 
-        assert staged is not None
-        assert unstaged is not None
-
         self._console.info(f"On branch {branch_name}")
         self._console.info("")
 

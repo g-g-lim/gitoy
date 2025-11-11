@@ -45,6 +45,7 @@ class GitoyCLI:
     - status: Show the working tree status
     - commit: Record changes to the Gitoy repository
     - log: Show commit logs
+    - checkout: Switch branches or restore working tree files
     """
 
     def __init__(self, commands):
@@ -76,7 +77,9 @@ def main():
     sqlite = SQLite(repo_db_path)
     database = Database(sqlite)
     worktree = Worktree(repository_path)
-    compress_file = CompressFile(zstandard.ZstdCompressor())
+    compress_file = CompressFile(
+        zstandard.ZstdCompressor(), zstandard.ZstdDecompressor()
+    )
     index_store = IndexStore(database, repository_path)
     blob_store = BlobStore(database)
     hash_file = HashFile()

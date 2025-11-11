@@ -95,9 +95,10 @@ class TestRepositoryBranch:
         """Test updating head branch."""
         repository.init()
 
-        result = repository.update_head_branch("test_branch_1")
+        result = repository.update_head_branch_name("test_branch_1")
 
         assert result.success is True
+        assert result.value is not None
         assert result.value.ref_name == "refs/heads/test_branch_1"
         assert result.value.head == 1
         assert result.value.target_object_id is None
@@ -109,7 +110,7 @@ class TestRepositoryBranch:
         """Test updating head branch with same name."""
         repository.init()
 
-        result = repository.update_head_branch("main")
+        result = repository.update_head_branch_name("main")
 
         assert result.success is False
         assert result.error == "Branch refs/heads/main already exists"
@@ -1920,3 +1921,130 @@ class TestRepositoryCompareIndexToTree:
         assert len(result.deleted) == 0
         assert len(result.modified) == 1
         assert result.modified[0].path == "./subdir/nested_file.txt"
+
+
+class TestRepositoryCheckout:
+    def test_checkout_branch(
+        self,
+        repository: Repository,
+        test_file_path,
+    ):
+        repository.init()
+
+        content = "Sample content"
+        test_file_path.write_text(content)
+
+        with patch("os.getcwd", return_value=test_file_path.parent.as_posix()):
+            repository.add_index([test_file_path.name])
+            test_file_entry = repository.index_store.find_by_paths(
+                [test_file_path.name]
+            )[0]
+
+            first_commit = repository.commit("Initial commit")
+            assert first_commit is not None
+
+            # Create and checkout new branch
+            new_branch_name = "new-branch"
+            repository.create_branch(new_branch_name)
+            result = repository.checkout(new_branch_name)
+            assert result.success, f"Checkout failed: {result.error}"
+
+            status_result = repository.status()
+            assert status_result.success
+            status = status_result.value
+            assert status is not None
+            assert status.branch_name == new_branch_name
+            assert status.staged.is_empty()
+            assert status.unstaged.is_empty()
+
+            checkout_branch_entries = repository.index_store.find_all()
+            assert len(checkout_branch_entries) == 1
+            assert checkout_branch_entries[0] == test_file_entry
+
+            paths = repository.worktree.find_paths([test_file_path.name])
+            assert len(paths) == 1
+            path = paths[0]
+            with open(path, "r") as f:
+                file_content = f.read()
+            assert file_content == content
+            assert test_file_path.stat().st_mode == path.stat().st_mode
+
+            # Modify file in new branch
+            test_file_path.write_text("Modified content")
+
+            repository.add_index([test_file_path.name])
+            repository.commit("Modify file in new branch")
+
+            modified_index_entries = repository.index_store.find_by_paths(
+                [test_file_path.name]
+            )
+
+            paths = repository.worktree.find_paths([test_file_path.name])
+            assert len(paths) == 1
+            path = paths[0]
+            with open(path, "r") as f:
+                file_content = f.read()
+            assert file_content == "Modified content"
+
+            logs = repository.log()
+            assert len(logs) == 2
+            assert logs[0].message == "Modify file in new branch"
+            assert logs[1].message == "Initial commit"
+
+            # Checkout main branch and verify original content
+            repository.checkout("main")
+
+            paths = repository.worktree.find_paths([test_file_path.name])
+            assert len(paths) == 1
+            path = paths[0]
+            with open(path, "r") as f:
+                file_content = f.read()
+            assert file_content == "Sample content"
+
+            status_result = repository.status()
+            assert status_result.success
+            status = status_result.value
+            assert status is not None
+            assert status.branch_name == "main"
+            assert status.staged.is_empty()
+            assert status.unstaged.is_empty()
+
+            logs = repository.log()
+            assert len(logs) == 1
+            assert logs[0].message == "Initial commit"
+
+            # Make changes in main branch
+            _, temp_path = tempfile.mkstemp(dir=test_file_path.parent)
+            main_new_file = Path(temp_path)
+            main_new_file.write_text("new file in main branch")
+            repository.add_index([main_new_file.name])
+            repository.commit("Add new file in main branch")
+
+            logs = repository.log()
+            assert len(logs) == 2
+            assert logs[0].message == "Add new file in main branch"
+            assert logs[1].message == "Initial commit"
+
+            # Switch back to new branch and verify changes persist
+            result = repository.checkout(new_branch_name)
+            assert result.success, f"Checkout failed: {result.error}"
+
+            status_result = repository.status()
+            assert status_result.success
+            status = status_result.value
+            assert status is not None
+            assert status.branch_name == new_branch_name
+            assert status.staged.is_empty()
+            assert status.unstaged.is_empty()
+
+            checkout_branch_entries = repository.index_store.find_all()
+            assert len(checkout_branch_entries) == 1
+            assert checkout_branch_entries[0] == modified_index_entries[0]
+
+            paths = repository.worktree.find_paths([test_file_path.name])
+            assert len(paths) == 1
+            path = paths[0]
+            with open(path, "r") as f:
+                file_content = f.read()
+            assert file_content == "Modified content"
+            assert test_file_path.stat().st_mode == path.stat().st_mode

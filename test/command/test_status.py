@@ -9,9 +9,9 @@ import tempfile
 from unittest.mock import patch
 from io import StringIO
 
-from command.init import Init
-from command.status import Status
-from repository.repository import Repository
+from src.command.init import Init
+from src.command.status import Status
+from src.repository.repository import Repository
 
 
 class TestStatusCommand:

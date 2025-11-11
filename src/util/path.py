@@ -1,5 +1,7 @@
 def normalize_path(path: str):
-    if path.startswith("."):
+    if path == ".":
+        return path
+    if path.startswith("./"):
         return path
     return "./" + path
 

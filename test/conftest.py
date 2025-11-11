@@ -84,7 +84,7 @@ def hash_file():
 
 @pytest.fixture(scope="function")
 def compress_file():
-    return CompressFile(zstandard.ZstdCompressor())
+    return CompressFile(zstandard.ZstdCompressor(), zstandard.ZstdDecompressor())
 
 
 @pytest.fixture(scope="function")

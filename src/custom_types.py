@@ -24,5 +24,10 @@ class Changes:
 @dataclass
 class StatusResult:
     branch_name: str
-    unstaged: Optional[Changes] = None
-    staged: Optional[Changes] = None
+    unstaged: Changes
+    staged: Changes
+
+    def __init__(self, branch_name: str) -> None:
+        self.branch_name = branch_name
+        self.unstaged = Changes([], [], [])
+        self.staged = Changes([], [], [])

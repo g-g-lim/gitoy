@@ -32,7 +32,7 @@ class Branch:
             self._console.error(result.error)
 
     def update(self, name: str):
-        result = self._repository.update_head_branch(name)
+        result = self._repository.update_head_branch_name(name)
         if result.success:
             self._console.success(f"Branch {result.value.ref_name} updated")
 

@@ -6,8 +6,13 @@ from util.constant import FILE_SIZE_MEDIUM, FILE_SIZE_SMALL
 
 
 class CompressFile:
-    def __init__(self, compression: zstandard.ZstdCompressor):
+    def __init__(
+        self,
+        compression: zstandard.ZstdCompressor,
+        decompression: zstandard.ZstdDecompressor,
+    ):
         self.compression = compression
+        self.decompression = decompression
 
     def compress(self, path: Path) -> bytes:
         stat = path.stat()
@@ -21,3 +26,6 @@ class CompressFile:
                     return self.compression.compress(mmap_file)
         else:
             raise NotImplementedError("File is too large")
+
+    def decompress(self, data: bytes) -> bytes:
+        return self.decompression.decompress(data)

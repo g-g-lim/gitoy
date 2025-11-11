@@ -21,7 +21,7 @@ class Convert:
     def path_to_index_entry(self, path: Path) -> IndexEntry:
         stat = path.stat()
         object_id = self.hash_file.hash(path)
-        file_path = self.repo_path.to_normalized_relative_path(path)
+        file_path = self.repo_path.normalize_relative_path(path)
         entry = IndexEntry(
             object_id=object_id,
             path=file_path,

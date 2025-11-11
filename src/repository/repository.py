@@ -12,7 +12,8 @@ from database.database import Database
 from repository.tree_store import TreeStore
 from database.entity.index_entry import IndexEntry
 from repository.entry_diff import DiffResult, EntryDiff
-from src.repository.tree import Tree
+from database.entity.ref import Ref
+from repository.tree import Tree
 from util.result import Result
 from repository.worktree import Worktree
 from repository.hash_file import HashFile
@@ -81,7 +82,7 @@ class Repository:
         new_branch = self.database.create_branch(name, head_branch.target_object_id)
         return Result.Ok({"ref": new_branch, "new": True})
 
-    def update_head_branch(self, branch_name: str):
+    def update_head_branch_name(self, branch_name: str):
         head_branch = self.get_head_branch()
         prev_ref_name = head_branch.ref_name
         create_ref_name = f"refs/heads/{branch_name}"
@@ -92,6 +93,15 @@ class Repository:
         self.database.update_ref(head_branch, {"ref_name": create_ref_name})
         head_branch.ref_name = create_ref_name
         return Result.Ok(head_branch)
+
+    def update_head_branch(self, from_ref: Ref, to_ref: Ref):
+        if from_ref.ref_name == to_ref.ref_name:
+            return Result.Fail(f"Branch {to_ref.ref_name} is already the head branch")
+
+        self.database.update_ref(from_ref, {"head": False})
+        self.database.update_ref(to_ref, {"head": True})
+
+        return Result.Ok(to_ref)
 
     # TODO: 브랜치 삭제 시 참조되지 않는 커밋 삭제 처리
     def delete_branch(self, name: str):
@@ -110,7 +120,7 @@ class Repository:
     def hash(self, path: Path) -> str:
         return self.hash_file.hash(path)
 
-    def compare_worktree_to_index(self, paths: list[str]) -> DiffResult:
+    def compare_worktree_to_index(self, paths: list[str | Path]) -> DiffResult:
         index_entries = self.index_store.find_by_paths(paths)
         worktree_paths = self.worktree.find_paths(paths)
         worktree_entries = [self.convert.path_to_index_entry(p) for p in worktree_paths]
@@ -127,7 +137,6 @@ class Repository:
             return result
 
         diff_result = self.compare_worktree_to_index(paths)
-
         if diff_result.is_empty():
             return Result.Ok(None)
 
@@ -146,7 +155,6 @@ class Repository:
     def status(self) -> Result[StatusResult]:
         if not self.is_initialized():
             return Result.Fail("Not a gitoy repository")
-
         head_branch = self.get_head_branch()
         branch_name = head_branch.branch_name
 
@@ -159,19 +167,16 @@ class Repository:
             index_diff_result.modified,
             index_diff_result.deleted,
         )
-        status_result.staged = Changes([], [], [])
 
-        if head_branch.target_object_id is None:
-            return Result.Ok(status_result)
+        tree_id = ""
+        if head_branch.target_object_id is not None:
+            head_commit = self.database.get_commit(head_branch.target_object_id)
+            assert head_commit is not None
+            tree_id = head_commit.tree_id
 
-        head_commit = self.database.get_commit(head_branch.target_object_id)
-        if head_commit:
-            tree = self.tree_store.build_commit_tree(head_commit.tree_id)
-            index_entries = self.database.list_index_entries()
-            tree_diff_result = self.compare_index_to_tree(index_entries, tree)
-        else:
-            tree_diff_result = DiffResult([], [], [])
-
+        tree = self.tree_store.build_commit_tree(tree_id)
+        index_entries = self.database.list_index_entries()
+        tree_diff_result = self.compare_index_to_tree(index_entries, tree)
         status_result.staged.added = tree_diff_result.added
         status_result.staged.modified = tree_diff_result.modified
         status_result.staged.deleted = tree_diff_result.deleted
@@ -225,25 +230,22 @@ class Repository:
 
     def checkout(self, ref_name: str) -> Result[None]:
         ref_name = f"refs/heads/{ref_name}"
-        branch = self.database.get_branch(ref_name)
-        if branch is None:
+        checkout_branch = self.database.get_branch(ref_name)
+        if checkout_branch is None:
             return Result.Fail(f"Branch '{ref_name}' not found")
 
         head_branch = self.get_head_branch()
-        if head_branch.ref_name == branch.ref_name:
+        if head_branch.ref_name == checkout_branch.ref_name:
             return Result.Ok(None)
 
-        assert branch.target_object_id is not None
+        assert checkout_branch.target_object_id is not None
 
         status_result = self.status()
         if status_result.failed:
             return Result.Fail(status_result.error)
 
         changes = status_result.value
-
         assert changes is not None
-        assert changes.staged is not None
-        assert changes.unstaged is not None
         staged = changes.staged
         unstaged = changes.unstaged
 
@@ -252,22 +254,26 @@ class Repository:
                 "You have uncommitted changes. Please commit or stash them before checkout."
             )
 
-        checkout_commit = self.database.get_commit(branch.target_object_id)
+        checkout_commit = self.database.get_commit(checkout_branch.target_object_id)
         assert checkout_commit is not None
 
         checkout_tree = self.tree_store.build_commit_tree(checkout_commit.tree_id)
         current_index_entries = self.index_store.find_all()
-        diff_result = self.compare_index_to_tree(current_index_entries, checkout_tree)
+        diff_result = EntryDiff(
+            checkout_tree.list_index_entries(), current_index_entries
+        ).diff()
 
         # Apply changes to worktree
         for entry in diff_result.added:
             blob = self.database.get_blob(entry.object_id)
             assert blob is not None
-            self.worktree.write(entry, blob.data)
+            self.worktree.write(entry, self.compress_file.decompress(blob.data))
+            entry.size = blob.size
         for entry in diff_result.modified:
             blob = self.database.get_blob(entry.object_id)
             assert blob is not None
-            self.worktree.write(entry, blob.data)
+            self.worktree.write(entry, self.compress_file.decompress(blob.data))
+            entry.size = blob.size
         for entry in diff_result.deleted:
             self.worktree.delete(entry)
 
@@ -276,6 +282,6 @@ class Repository:
         self.index_store.update(diff_result.modified)
         self.index_store.create(diff_result.added)
 
-        self.database.update_ref(head_branch, {"ref_name": branch.ref_name})
+        self.update_head_branch(head_branch, checkout_branch)
 
         return Result.Ok(None)

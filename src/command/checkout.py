@@ -13,7 +13,7 @@ class Checkout:
 
     def __call__(self, ref_name: str):
         result = self._repository.checkout(ref_name)
-        if result:
-            self._console.print_error(result.unwrap_err())
+        if result.failed:
+            self._console.error(result.error)
         else:
-            self._console.print_info(f"Switched to branch '{ref_name}'")
+            self._console.info(f"Switched to branch '{ref_name}'")

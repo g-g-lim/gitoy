@@ -55,8 +55,8 @@ class RepositoryPath:
     def to_relative_paths(self, paths: list[str | Path]):
         return [self.to_relative_path(path) for path in paths]
 
-    def to_normalized_relative_path(self, path: str | Path) -> str:
+    def normalize_relative_path(self, path: str | Path) -> str:
         return normalize_path(self.to_relative_path(path).as_posix())
 
-    def to_normalized_relative_paths(self, paths: list[str | Path]):
-        return [self.to_normalized_relative_path(path) for path in paths]
+    def normalize_relative_paths(self, paths: list[str | Path]):
+        return [self.normalize_relative_path(path) for path in paths]

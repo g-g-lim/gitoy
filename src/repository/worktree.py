@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.database.entity.index_entry import IndexEntry
+from database.entity.index_entry import IndexEntry
 from util.array import unique
 
 from repository.repo_path import RepositoryPath
@@ -14,7 +14,7 @@ class Worktree:
     def root_dir(self) -> Path:
         return self.repo_path.worktree_path
 
-    def match(self, path: str) -> list[Path]:
+    def match(self, path: str | Path) -> list[Path]:
         relative_path: Path = self.repo_path.to_relative_path(path)
         _path: Path = self.root_dir / relative_path
         if _path.is_dir():
@@ -30,7 +30,7 @@ class Worktree:
         else:
             return []
 
-    def find_paths(self, paths: list[str]) -> list[Path]:
+    def find_paths(self, paths: list[str | Path]) -> list[Path]:
         return list(unique([p for path in paths for p in self.match(path)], "as_posix"))
 
     def write(self, index_entry: IndexEntry, content: bytes) -> Path:
