@@ -24,19 +24,9 @@ class Convert:
         file_path = self.repo_path.to_normalized_relative_path(path)
         entry = IndexEntry(
             object_id=object_id,
-            file_path=file_path,
-            file_mode=oct(stat.st_mode),
-            file_size=stat.st_size,
-            ctime=stat.st_ctime,
-            mtime=stat.st_mtime,
-            dev=stat.st_dev,
-            inode=stat.st_ino,
-            uid=stat.st_uid,
-            gid=stat.st_gid,
-            stage=0,
-            assume_valid=False,
-            skip_worktree=False,
-            intent_to_add=False,
+            path=file_path,
+            mode=oct(stat.st_mode),
+            size=stat.st_size,
         )
         return entry
 
@@ -53,6 +43,6 @@ class Convert:
         return blob
 
     def index_entry_to_blob(self, entry: IndexEntry) -> Blob:
-        path = self.repo_path.worktree_path / entry.file_path
+        path = self.repo_path.worktree_path / entry.path
         blob = self.path_to_blob(path)
         return blob

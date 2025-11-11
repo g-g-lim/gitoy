@@ -154,9 +154,13 @@ class Repository:
         index_diff_result = self.compare_worktree_to_index([worktree_path.as_posix()])
 
         status_result = StatusResult(branch_name)
-        status_result.unstaged = Changes(index_diff_result.added, index_diff_result.modified, index_diff_result.deleted)
+        status_result.unstaged = Changes(
+            index_diff_result.added,
+            index_diff_result.modified,
+            index_diff_result.deleted,
+        )
         status_result.staged = Changes([], [], [])
-        
+
         if head_branch.target_object_id is None:
             return Result.Ok(status_result)
 
@@ -169,7 +173,7 @@ class Repository:
             tree_diff_result = DiffResult([], [], [])
 
         status_result.staged.added = tree_diff_result.added
-        status_result.staged.modified = tree_diff_result.modified 
+        status_result.staged.modified = tree_diff_result.modified
         status_result.staged.deleted = tree_diff_result.deleted
 
         return Result.Ok(status_result)
@@ -218,7 +222,7 @@ class Repository:
             return []
         commit_logs = self.commit_store.list_commit_logs(head_branch.target_object_id)
         return commit_logs
-    
+
     def checkout(self, branch_name: str) -> Result:
         branch_ref_name = f"refs/heads/{branch_name}"
         branch = self.database.get_branch(branch_ref_name)
@@ -230,17 +234,29 @@ class Repository:
             return Result.Ok(None)
 
         assert branch.target_object_id is not None
-        
+
+        status_result = self.status()
+        if status_result.failed:
+            return status_result
+
+        changes = status_result.value
+
+        assert changes is not None
+        assert changes.staged is not None
+        assert changes.unstaged is not None
+        staged = changes.staged
+        unstaged = changes.unstaged
+
+        if not staged.is_empty() or not unstaged.is_empty():
+            return Result.Fail(
+                "You have uncommitted changes. Please commit or stash them before checkout."
+            )
+
         checkout_commit = self.database.get_commit(branch.target_object_id)
         assert checkout_commit is not None
-        
-        index_diff_result = self.compare_worktree_to_index([self.worktree_path.as_posix()])
-                
+
         checkout_tree = self.tree_store.build_commit_tree(checkout_commit.tree_id)
-        tree_entries = checkout_tree.list_index_entries()
-        
-        # entry_diff = EntryDiff(index_diff_result.all(), tree_entries)
-        
+
         self.database.update_ref(head_branch, {"ref_name": branch.ref_name})
 
         return Result.Ok(None)

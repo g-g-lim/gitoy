@@ -42,8 +42,8 @@ class Tree:
     def list_index_entries(self) -> list[IndexEntry]:
         return [
             IndexEntry(
-                file_path=path,
-                file_mode=entry.entry_mode,
+                path=path,
+                mode=entry.entry_mode,
                 object_id=entry.entry_object_id,
             )
             for path, entry in self.index
@@ -55,14 +55,14 @@ class Tree:
         return self.index.size
 
     def add(self, index_entry: IndexEntry):
-        paths = accumulate_paths(index_entry.file_path)
+        paths = accumulate_paths(index_entry.path)
         parent_tree_entry: Optional[TreeEntry] = None
         for path in paths:
             tree_entry = self.index.get(path)
             if tree_entry is None:
                 entry_name = path.split("/")[-1]
                 entry_type = "blob" if path == paths[-1] else "tree"
-                entry_mode = index_entry.file_mode if entry_type == "blob" else "040000"
+                entry_mode = index_entry.mode if entry_type == "blob" else "040000"
                 entry_object_id = (
                     index_entry.object_id if entry_type == "blob" else None
                 )
@@ -81,7 +81,7 @@ class Tree:
                 parent_tree_entry = tree_entry
 
     def remove(self, index_entry: IndexEntry):
-        paths = accumulate_paths(index_entry.file_path)
+        paths = accumulate_paths(index_entry.path)
         parent_tree_entry: Optional[TreeEntry] = None
 
         # remove target blob tree
@@ -110,7 +110,7 @@ class Tree:
             parent_tree_entry = parent_parent
 
     def update(self, index_entry: IndexEntry):
-        paths = accumulate_paths(index_entry.file_path)
+        paths = accumulate_paths(index_entry.path)
         for path in paths:
             tree_entry = self.index.get(path)
             if tree_entry is None:
@@ -119,7 +119,7 @@ class Tree:
                 )
             if tree_entry.entry_type == "blob":
                 tree_entry.entry_object_id = index_entry.object_id
-                tree_entry.entry_mode = index_entry.file_mode
+                tree_entry.entry_mode = index_entry.mode
             else:
                 # invalidate object_jd
                 tree_entry.entry_object_id = None

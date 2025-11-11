@@ -1,6 +1,6 @@
 import hashlib
-from database.entity.index_entry import IndexEntry
-from repository.tree import Tree
+from src.database.entity.index_entry import IndexEntry
+from src.repository.tree import Tree
 
 from test.util import check_parent_child_id
 
@@ -12,7 +12,7 @@ class TestTreeAddUpdateDelete:
         # Given
         tree = Tree()
         index_entry1 = IndexEntry(
-            file_path="a/b/c.txt", object_id="dummy_oid1", file_mode="100644"
+            path="a/b/c.txt", object_id="dummy_oid1", mode="100644"
         )
 
         # When
@@ -52,7 +52,7 @@ class TestTreeAddUpdateDelete:
 
         # Given: Add another file to an existing directory
         index_entry2 = IndexEntry(
-            file_path="a/b/d.txt", object_id="dummy_oid2", file_mode="100644"
+            path="a/b/d.txt", object_id="dummy_oid2", mode="100644"
         )
 
         # When
@@ -76,7 +76,7 @@ class TestTreeAddUpdateDelete:
         # Given
         tree = Tree()
         index_entry1 = IndexEntry(
-            file_path="./a/b/c.txt", object_id="dummy_oid1", file_mode="100644"
+            path="./a/b/c.txt", object_id="dummy_oid1", mode="100644"
         )
         tree.add(index_entry1)
 
@@ -100,10 +100,10 @@ class TestTreeAddUpdateDelete:
         # Given
         tree = Tree()
         index_entry2 = IndexEntry(
-            file_path="./a/b/c.txt", object_id="dummy_oid1", file_mode="100644"
+            path="./a/b/c.txt", object_id="dummy_oid1", mode="100644"
         )
         index_entry3 = IndexEntry(
-            file_path="./a/d.txt", object_id="dummy_oid2", file_mode="100644"
+            path="./a/d.txt", object_id="dummy_oid2", mode="100644"
         )
         tree.add(index_entry2)
         tree.add(index_entry3)
@@ -136,7 +136,7 @@ class TestTreeAddUpdateDelete:
         # Given
         tree = Tree()
         initial_entry = IndexEntry(
-            file_path="./a/b/c.txt", object_id="old_oid", file_mode="100644"
+            path="./a/b/c.txt", object_id="old_oid", mode="100644"
         )
         tree.add(initial_entry)
 
@@ -152,7 +152,7 @@ class TestTreeAddUpdateDelete:
 
         # When
         updated_entry = IndexEntry(
-            file_path="./a/b/c.txt", object_id="new_oid", file_mode="100755"
+            path="./a/b/c.txt", object_id="new_oid", mode="100755"
         )
         tree.update(updated_entry)
 
@@ -170,14 +170,14 @@ class TestTreeAddUpdateDelete:
         # Given
         tree = Tree()
         original_entry = IndexEntry(
-            file_path="./a/file.txt", object_id="same_oid", file_mode="100644"
+            path="./a/file.txt", object_id="same_oid", mode="100644"
         )
         tree.add(original_entry)
         assert tree.has_entry("./a/file.txt")
 
         # When
         renamed_entry = IndexEntry(
-            file_path="./b/file.txt", object_id="same_oid", file_mode="100644"
+            path="./b/file.txt", object_id="same_oid", mode="100644"
         )
         tree.remove(original_entry)
         tree.add(renamed_entry)
@@ -201,12 +201,8 @@ class TestTreeBuildObjectIds:
     def test_add_files_with_empty_tree(self):
         # Given
         tree = Tree()
-        entry_c = IndexEntry(
-            file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
-        )
-        entry_d = IndexEntry(
-            file_path="./a/d.txt", object_id="oid_d", file_mode="100644"
-        )
+        entry_c = IndexEntry(path="./a/b/c.txt", object_id="oid_c", mode="100644")
+        entry_d = IndexEntry(path="./a/d.txt", object_id="oid_d", mode="100644")
         tree.add(entry_c)
         tree.add(entry_d)
 
@@ -249,12 +245,8 @@ class TestTreeBuildObjectIds:
     def test_add_after_add(self):
         # Given
         tree = Tree()
-        entry_c = IndexEntry(
-            file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
-        )
-        entry_d = IndexEntry(
-            file_path="./a/d.txt", object_id="oid_d", file_mode="100644"
-        )
+        entry_c = IndexEntry(path="./a/b/c.txt", object_id="oid_c", mode="100644")
+        entry_d = IndexEntry(path="./a/d.txt", object_id="oid_d", mode="100644")
         tree.add(entry_c)
         tree.add(entry_d)
 
@@ -264,9 +256,7 @@ class TestTreeBuildObjectIds:
         before_tree_a_id = tree.get_entry("./a").entry_object_id
         before_tree_b_id = tree.get_entry("./a/b").entry_object_id
 
-        entry_e = IndexEntry(
-            file_path="./a/b/e.txt", object_id="oid_e", file_mode="100644"
-        )
+        entry_e = IndexEntry(path="./a/b/e.txt", object_id="oid_e", mode="100644")
 
         tree.add(entry_e)
 
@@ -314,12 +304,8 @@ class TestTreeBuildObjectIds:
     def test_remove(self):
         # Given
         tree = Tree()
-        entry_c = IndexEntry(
-            file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
-        )
-        entry_d = IndexEntry(
-            file_path="./a/d.txt", object_id="oid_d", file_mode="100644"
-        )
+        entry_c = IndexEntry(path="./a/b/c.txt", object_id="oid_c", mode="100644")
+        entry_d = IndexEntry(path="./a/d.txt", object_id="oid_d", mode="100644")
         tree.add(entry_c)
         tree.add(entry_d)
 
@@ -359,12 +345,8 @@ class TestTreeBuildObjectIds:
 
     def test_update(self):
         tree = Tree()
-        entry_c = IndexEntry(
-            file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
-        )
-        entry_d = IndexEntry(
-            file_path="./a/d.txt", object_id="oid_d", file_mode="100644"
-        )
+        entry_c = IndexEntry(path="./a/b/c.txt", object_id="oid_c", mode="100644")
+        entry_d = IndexEntry(path="./a/d.txt", object_id="oid_d", mode="100644")
         tree.add(entry_c)
         tree.add(entry_d)
 
@@ -375,7 +357,7 @@ class TestTreeBuildObjectIds:
         before_tree_b_id = tree.get_entry("./a/b").entry_object_id
 
         new_entry_c = IndexEntry(
-            file_path="./a/b/c.txt", object_id="new_oid_c", file_mode="100644"
+            path="./a/b/c.txt", object_id="new_oid_c", mode="100644"
         )
 
         tree.update(new_entry_c)
@@ -422,16 +404,12 @@ class TestTreeBuildObjectIds:
     def test_update_duplicate_structure(self):
         # Given
         tree = Tree()
-        entry_abc = IndexEntry(
-            file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
-        )
+        entry_abc = IndexEntry(path="./a/b/c.txt", object_id="oid_c", mode="100644")
         tree.add(entry_abc)
 
         tree.build_object_ids()
 
-        entry_bc = IndexEntry(
-            file_path="./b/c.txt", object_id="oid_c", file_mode="100644"
-        )
+        entry_bc = IndexEntry(path="./b/c.txt", object_id="oid_c", mode="100644")
         tree.add(entry_bc)
 
         # When
@@ -449,21 +427,15 @@ class TestTreeBuildObjectIds:
     def test_check_tree_entry_ids(self):
         # Given
         tree = Tree()
-        entry_abc = IndexEntry(
-            file_path="./a/b/c.txt", object_id="oid_c", file_mode="100644"
-        )
-        entry_abd = IndexEntry(
-            file_path="./a/b/d.txt", object_id="oid_d", file_mode="100644"
-        )
+        entry_abc = IndexEntry(path="./a/b/c.txt", object_id="oid_c", mode="100644")
+        entry_abd = IndexEntry(path="./a/b/d.txt", object_id="oid_d", mode="100644")
 
         tree.add(entry_abc)
         tree.add(entry_abd)
 
         tree.build_object_ids()
 
-        entry_ac = IndexEntry(
-            file_path="./a/c.txt", object_id="oid_c", file_mode="100644"
-        )
+        entry_ac = IndexEntry(path="./a/c.txt", object_id="oid_c", mode="100644")
 
         tree.add(entry_ac)
 
@@ -485,9 +457,7 @@ class TestTreeBuildObjectIds:
     def test_tree_id_consistency_when_add(self):
         # Given
         tree = Tree()
-        entry_ab = IndexEntry(
-            file_path="./a/b.txt", object_id="oid_b", file_mode="100644"
-        )
+        entry_ab = IndexEntry(path="./a/b.txt", object_id="oid_b", mode="100644")
         tree.add(entry_ab)
 
         tree.build_object_ids()
@@ -506,12 +476,10 @@ class TestTreeBuildObjectIds:
     def test_tree_id_consistency_when_update(self):
         # Given
         tree = Tree()
-        entry_ab = IndexEntry(
-            file_path="./a/b.txt", object_id="oid_b", file_mode="100644"
-        )
+        entry_ab = IndexEntry(path="./a/b.txt", object_id="oid_b", mode="100644")
         tree.add(entry_ab)
         update_entry_ab = IndexEntry(
-            file_path="./a/b.txt", object_id="oid_bcdef", file_mode="100644"
+            path="./a/b.txt", object_id="oid_bcdef", mode="100644"
         )
         tree.update(update_entry_ab)
 
@@ -532,9 +500,7 @@ class TestTreeBuildObjectIds:
     def test_tree_id_consistency_after_update_on_same_tree(self):
         # Given
         tree = Tree()
-        entry_ab = IndexEntry(
-            file_path="./a/b.txt", object_id="oid_b", file_mode="100644"
-        )
+        entry_ab = IndexEntry(path="./a/b.txt", object_id="oid_b", mode="100644")
         tree.add(entry_ab)
         tree.remove(entry_ab)
 

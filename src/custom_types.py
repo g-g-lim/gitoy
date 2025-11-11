@@ -10,11 +10,16 @@ from database.entity.index_entry import IndexEntry
 # Type alias for readable buffer types that can be used with hash functions
 ReadableBuffer = Union[bytes, bytearray, memoryview]
 
+
 @dataclass
 class Changes:
     added: list[IndexEntry]
     modified: list[IndexEntry]
     deleted: list[IndexEntry]
+
+    def is_empty(self) -> bool:
+        return not (self.added or self.modified or self.deleted)
+
 
 @dataclass
 class StatusResult:

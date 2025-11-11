@@ -119,14 +119,14 @@ class Database:
     def list_index_entries_by_paths(self, paths: list[str]) -> list[IndexEntry]:
         quoted_paths = ",".join([f"'{path}'" for path in paths])
         index_entries = self.sqlite.select(
-            f"SELECT * FROM {IndexEntry.table_name()} WHERE file_path IN ({quoted_paths})"
+            f"SELECT * FROM {IndexEntry.table_name()} WHERE path IN ({quoted_paths})"
         )
         return [IndexEntry(**index_entry) for index_entry in index_entries]
 
     def list_index_entries_by_paths_startwith(
         self, paths: list[str]
     ) -> list[IndexEntry]:
-        like_conditions = " OR ".join([f"file_path LIKE '{path}%'" for path in paths])
+        like_conditions = " OR ".join([f"path LIKE '{path}%'" for path in paths])
         index_entries = self.sqlite.select(
             f"SELECT * FROM {IndexEntry.table_name()} WHERE {like_conditions}"
         )

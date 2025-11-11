@@ -23,9 +23,9 @@ class TestIndexStore:
         with patch("os.getcwd", return_value=test_directory.parent.as_posix()):
             result = repository.index_store.find_by_paths(["."])
             assert len(result) == 3
-            assert result[0].file_path == index_entry_1.file_path
-            assert result[1].file_path == index_entry_2.file_path
-            assert result[2].file_path == index_entry_3.file_path
+            assert result[0].path == index_entry_1.path
+            assert result[1].path == index_entry_2.path
+            assert result[2].path == index_entry_3.path
 
             result = repository.index_store.find_by_paths(["./"])
             assert len(result) == 3
@@ -50,17 +50,17 @@ class TestIndexStore:
 
             result = repository.index_store.find_by_paths(["file1.txt"])
             assert len(result) == 1
-            assert result[0].file_path == index_entry_1.file_path
+            assert result[0].path == index_entry_1.path
 
             result = repository.index_store.find_by_paths(["test_dir/file2.txt"])
             assert len(result) == 1
-            assert result[0].file_path == index_entry_2.file_path
+            assert result[0].path == index_entry_2.path
 
             result = repository.index_store.find_by_paths(
                 ["test_dir/sub_dir/file3.txt"]
             )
             assert len(result) == 1
-            assert result[0].file_path == index_entry_3.file_path
+            assert result[0].path == index_entry_3.path
 
     def test_find_by_paths_with_relative_path_2(
         self, repository: Repository, database: Database, test_directory: Path
@@ -102,9 +102,9 @@ class TestIndexStore:
                 [test_directory.parent.as_posix()]
             )  # absolute path
             assert len(result) == 3
-            assert result[0].file_path == index_entry_1.file_path
-            assert result[1].file_path == index_entry_2.file_path
-            assert result[2].file_path == index_entry_3.file_path
+            assert result[0].path == index_entry_1.path
+            assert result[1].path == index_entry_2.path
+            assert result[2].path == index_entry_3.path
 
             result = repository.index_store.find_by_paths(
                 [test_directory.parent.as_posix() + "/"]

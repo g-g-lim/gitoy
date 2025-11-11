@@ -167,19 +167,9 @@ class TestRepositoryAddIndex:
             entry_from_db = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
             assert len(entry_from_db) == 1
             assert entry_from_db[0]["object_id"] == hash
-            assert entry_from_db[0]["file_path"] == test_file_entry.file_path
-            assert entry_from_db[0]["file_mode"] == test_file_entry.file_mode
-            assert entry_from_db[0]["file_size"] == test_file_entry.file_size
-            assert entry_from_db[0]["ctime"] == test_file_entry.ctime
-            assert entry_from_db[0]["mtime"] == test_file_entry.mtime
-            assert entry_from_db[0]["dev"] == test_file_entry.dev
-            assert entry_from_db[0]["inode"] == test_file_entry.inode
-            assert entry_from_db[0]["uid"] == test_file_entry.uid
-            assert entry_from_db[0]["gid"] == test_file_entry.gid
-            assert entry_from_db[0]["stage"] == test_file_entry.stage
-            assert entry_from_db[0]["assume_valid"] == test_file_entry.assume_valid
-            assert entry_from_db[0]["skip_worktree"] == test_file_entry.skip_worktree
-            assert entry_from_db[0]["intent_to_add"] == test_file_entry.intent_to_add
+            assert entry_from_db[0]["path"] == test_file_entry.path
+            assert entry_from_db[0]["mode"] == test_file_entry.mode
+            assert entry_from_db[0]["size"] == test_file_entry.size
 
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 1
@@ -265,7 +255,7 @@ class TestRepositoryAddIndex:
 
             entries = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
             assert len(entries) == 1
-            assert entries[0]["file_size"] == test_large_file_path.stat().st_size
+            assert entries[0]["size"] == test_large_file_path.stat().st_size
 
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 1
@@ -407,8 +397,14 @@ class TestRepositoryStatus:
             assert status_result is not None
             assert status_result.unstaged is not None
             assert status_result.staged is not None
-            assert path1 in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.added]
-            assert path2 in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.added]
+            assert path1 in [
+                entry.absolute_path(repository.worktree_path)
+                for entry in status_result.unstaged.added
+            ]
+            assert path2 in [
+                entry.absolute_path(repository.worktree_path)
+                for entry in status_result.unstaged.added
+            ]
             assert len(status_result.unstaged.added) == 2
 
     def test_status_with_unstaged_modified_files(
@@ -432,7 +428,10 @@ class TestRepositoryStatus:
             assert status_result is not None
             assert status_result.unstaged is not None
             assert status_result.staged is not None
-            assert path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.modified]
+            assert path in [
+                entry.absolute_path(repository.worktree_path)
+                for entry in status_result.unstaged.modified
+            ]
             assert status_result.unstaged.deleted == []
             assert status_result.unstaged.added == []
 
@@ -458,7 +457,10 @@ class TestRepositoryStatus:
             assert status_result is not None
             assert status_result.unstaged is not None
             assert status_result.staged is not None
-            assert path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.deleted]
+            assert path in [
+                entry.absolute_path(repository.worktree_path)
+                for entry in status_result.unstaged.deleted
+            ]
             assert status_result.unstaged.modified == []
             assert status_result.unstaged.added == []
 
@@ -489,9 +491,18 @@ class TestRepositoryStatus:
             assert status_result is not None
             assert status_result.unstaged is not None
             assert status_result.staged is not None
-            assert untracked_path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.added]
-            assert modified_path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.modified]
-            assert deleted_path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.deleted]
+            assert untracked_path in [
+                entry.absolute_path(repository.worktree_path)
+                for entry in status_result.unstaged.added
+            ]
+            assert modified_path in [
+                entry.absolute_path(repository.worktree_path)
+                for entry in status_result.unstaged.modified
+            ]
+            assert deleted_path in [
+                entry.absolute_path(repository.worktree_path)
+                for entry in status_result.unstaged.deleted
+            ]
 
     def test_status_mixed_file_states_2(
         self, repository: Repository, test_directory: Path, test_repo_directory: Path
@@ -522,10 +533,22 @@ class TestRepositoryStatus:
             assert status_result is not None
             assert status_result.unstaged is not None
             assert status_result.staged is not None
-            assert untracked_path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.added]
-            assert untracked_path2 in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.added]
-            assert modified_path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.modified]
-            assert deleted_path in [entry.absolute_path(repository.worktree_path) for entry in status_result.unstaged.deleted]
+            assert untracked_path in [
+                entry.absolute_path(repository.worktree_path)
+                for entry in status_result.unstaged.added
+            ]
+            assert untracked_path2 in [
+                entry.absolute_path(repository.worktree_path)
+                for entry in status_result.unstaged.added
+            ]
+            assert modified_path in [
+                entry.absolute_path(repository.worktree_path)
+                for entry in status_result.unstaged.modified
+            ]
+            assert deleted_path in [
+                entry.absolute_path(repository.worktree_path)
+                for entry in status_result.unstaged.deleted
+            ]
 
 
 class TestRepositoryCommit:
@@ -540,20 +563,10 @@ class TestRepositoryCommit:
 
         index_entries = [
             IndexEntry(
-                file_path="./new_file.txt",
+                path="./new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
 
@@ -572,20 +585,10 @@ class TestRepositoryCommit:
 
         index_entries = [
             IndexEntry(
-                file_path="./new_file.txt",
+                path="./new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
 
@@ -622,36 +625,16 @@ class TestRepositoryCommit:
 
         index_entries = [
             IndexEntry(
-                file_path="./new_file.txt",
+                path="./new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
             IndexEntry(
-                file_path="./a/new_file.txt",
+                path="./a/new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
 
@@ -686,20 +669,10 @@ class TestRepositoryCommit:
         repository.init()
         index_entries = [
             IndexEntry(
-                file_path="./new_file.txt",
+                path="./new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
         database.create_index_entries(index_entries)
@@ -707,20 +680,10 @@ class TestRepositoryCommit:
 
         index_entries2 = [
             IndexEntry(
-                file_path="./new_file2.txt",
+                path="./new_file2.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
         database.create_index_entries(index_entries2)
@@ -767,20 +730,10 @@ class TestRepositoryCommit:
         repository.init()
         index_entries = [
             IndexEntry(
-                file_path="./new_file.txt",
+                path="./new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
         database.create_index_entries(index_entries)
@@ -788,20 +741,10 @@ class TestRepositoryCommit:
 
         index_entries2 = [
             IndexEntry(
-                file_path="./dir/new_file.txt",
+                path="./dir/new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
         database.create_index_entries(index_entries2)
@@ -848,36 +791,16 @@ class TestRepositoryCommit:
         repository.init()
         index_entries = [
             IndexEntry(
-                file_path="./new_file.txt",
+                path="./new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
             IndexEntry(
-                file_path="./new_file2.txt",
+                path="./new_file2.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
         database.create_index_entries(index_entries)
@@ -923,36 +846,16 @@ class TestRepositoryCommit:
         repository.init()
         index_entries = [
             IndexEntry(
-                file_path="./new_file.txt",
+                path="./new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
             IndexEntry(
-                file_path="./dir/new_file.txt",
+                path="./dir/new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
         database.create_index_entries(index_entries)
@@ -1002,36 +905,16 @@ class TestRepositoryCommit:
         repository.init()
         index_entries = [
             IndexEntry(
-                file_path="./new_file.txt",
+                path="./new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
             IndexEntry(
-                file_path="./dir/new_file.txt",
+                path="./dir/new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
         database.create_index_entries(index_entries)
@@ -1088,36 +971,16 @@ class TestRepositoryCommit:
         repository.init()
         index_entries = [
             IndexEntry(
-                file_path="./new_file.txt",
+                path="./new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
             IndexEntry(
-                file_path="./dir/new_file.txt",
+                path="./dir/new_file.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
         database.create_index_entries(index_entries)
@@ -1125,7 +988,7 @@ class TestRepositoryCommit:
 
         # file modified
         database.delete_index_entries([index_entries[1]])
-        index_entries[1].file_path = "./dir2/new_file.txt"
+        index_entries[1].path = "./dir2/new_file.txt"
         database.create_index_entries([index_entries[1]])
 
         second_commit = repository.commit("Second commit")
@@ -1172,36 +1035,16 @@ class TestRepositoryCommit:
         repository.init()
         index_entries = [
             IndexEntry(
-                file_path="./new_file.txt",
+                path="./new_file.txt",
                 object_id="new_file_blob",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
             IndexEntry(
-                file_path="./new_file2.txt",
+                path="./new_file2.txt",
                 object_id="new_file2_blob",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
         database.create_index_entries(index_entries)
@@ -1213,20 +1056,10 @@ class TestRepositoryCommit:
         update_index_entries = [
             index_entries[1],
             IndexEntry(
-                file_path="./new_file3.txt",
+                path="./new_file3.txt",
                 object_id="new_file3_blob",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
 
@@ -1274,20 +1107,10 @@ class TestRepositoryCommit:
         repository.init()
         index_entries = [
             IndexEntry(
-                file_path="./new_file.txt",
+                path="./new_file.txt",
                 object_id="new_file_blob",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
         database.create_index_entries(index_entries)
@@ -1295,20 +1118,10 @@ class TestRepositoryCommit:
 
         index_entries2 = [
             IndexEntry(
-                file_path="./new_file2.txt",
+                path="./new_file2.txt",
                 object_id="new_file_blob",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
         database.create_index_entries(index_entries2)
@@ -1316,20 +1129,10 @@ class TestRepositoryCommit:
 
         index_entries3 = [
             IndexEntry(
-                file_path="./new_file3.txt",
+                path="./new_file3.txt",
                 object_id="new_file_blob",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
         ]
         database.create_index_entries(index_entries3)
@@ -1595,36 +1398,16 @@ class TestRepositoryCompareIndexToTree:
         # Add files to index
         index_entries = [
             IndexEntry(
-                file_path="new_file1.txt",
+                path="new_file1.txt",
                 object_id="blob_123",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
             IndexEntry(
-                file_path="new_file2.txt",
+                path="new_file2.txt",
                 object_id="blob_456",
-                file_mode="100644",
-                file_size=200,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12346,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=200,
             ),
         ]
 
@@ -1642,7 +1425,7 @@ class TestRepositoryCompareIndexToTree:
         assert len(result.deleted) == 0
         assert len(result.modified) == 0
 
-        added_paths = [entry.file_path for entry in result.added]
+        added_paths = [entry.path for entry in result.added]
         assert "new_file1.txt" in added_paths
         assert "new_file2.txt" in added_paths
 
@@ -1739,36 +1522,16 @@ class TestRepositoryCompareIndexToTree:
         # Add files to index
         index_entries = [
             IndexEntry(
-                file_path="./modified_file1.txt",
+                path="./modified_file1.txt",
                 object_id="blob_new_123",  # Different object_id
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
             IndexEntry(
-                file_path="./modified_file2.txt",
+                path="./modified_file2.txt",
                 object_id="blob_456",
-                file_mode="100755",  # Different file_mode
-                file_size=200,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12346,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100755",  # Different file_mode
+                size=200,
             ),
         ]
 
@@ -1816,7 +1579,7 @@ class TestRepositoryCompareIndexToTree:
         assert len(result.deleted) == 0
         assert len(result.modified) == 2
 
-        modified_paths = [entry.file_path for entry in result.modified]
+        modified_paths = [entry.path for entry in result.modified]
         assert "./modified_file1.txt" in modified_paths
         assert "./modified_file2.txt" in modified_paths
 
@@ -1847,20 +1610,10 @@ class TestRepositoryCompareIndexToTree:
         # Add files to index
         index_entries = [
             IndexEntry(
-                file_path="./unchanged_file.txt",
+                path="./unchanged_file.txt",
                 object_id="blob_same",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             )
         ]
 
@@ -1929,54 +1682,24 @@ class TestRepositoryCompareIndexToTree:
         index_entries = [
             # Added file (not in tree)
             IndexEntry(
-                file_path="./added_file.txt",
+                path="./added_file.txt",
                 object_id="blob_added",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             ),
             # Modified file (different content)
             IndexEntry(
-                file_path="./modified_file.txt",
+                path="./modified_file.txt",
                 object_id="blob_modified_new",
-                file_mode="100644",
-                file_size=200,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12346,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=200,
             ),
             # Unchanged file
             IndexEntry(
-                file_path="./unchanged_file.txt",
+                path="./unchanged_file.txt",
                 object_id="blob_unchanged",
-                file_mode="100644",
-                file_size=300,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12347,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=300,
             ),
         ]
 
@@ -2033,11 +1756,11 @@ class TestRepositoryCompareIndexToTree:
 
         # Should have 1 added file
         assert len(result.added) == 1
-        assert result.added[0].file_path == "./added_file.txt"
+        assert result.added[0].path == "./added_file.txt"
 
         # Should have 1 modified file
         assert len(result.modified) == 1
-        assert result.modified[0].file_path == "./modified_file.txt"
+        assert result.modified[0].path == "./modified_file.txt"
 
         # Should have 1 deleted file (this will fail due to bug in original code)
         assert len(result.deleted) == 1
@@ -2068,20 +1791,10 @@ class TestRepositoryCompareIndexToTree:
 
         index_entries = [
             IndexEntry(
-                file_path="./after.txt",
+                path="./after.txt",
                 object_id="blob_modified",
-                file_mode="100644",
-                file_size=200,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12346,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=200,
             ),
         ]
 
@@ -2120,11 +1833,11 @@ class TestRepositoryCompareIndexToTree:
 
         # Should have 1 added file
         assert len(result.added) == 1
-        assert result.added[0].file_path == "./after.txt"
+        assert result.added[0].path == "./after.txt"
 
         # Should have 1 deleted file (this will fail due to bug in original code)
         assert len(result.deleted) == 1
-        assert result.deleted[0].file_path == "./before.txt"
+        assert result.deleted[0].path == "./before.txt"
 
     def test_diff_with_nested_directory_structure(
         self, repository: Repository, database: Database, tree_store: TreeStore
@@ -2154,20 +1867,10 @@ class TestRepositoryCompareIndexToTree:
         # Add files to index with nested paths
         index_entries = [
             IndexEntry(
-                file_path="./subdir/nested_file.txt",
+                path="./subdir/nested_file.txt",
                 object_id="blob_nested_new",
-                file_mode="100644",
-                file_size=100,
-                ctime=1640995200.0,
-                mtime=1640995200.0,
-                dev=1,
-                inode=12345,
-                uid=1000,
-                gid=1000,
-                stage=0,
-                assume_valid=False,
-                skip_worktree=False,
-                intent_to_add=False,
+                mode="100644",
+                size=100,
             )
         ]
 
@@ -2216,4 +1919,4 @@ class TestRepositoryCompareIndexToTree:
         assert len(result.added) == 0
         assert len(result.deleted) == 0
         assert len(result.modified) == 1
-        assert result.modified[0].file_path == "./subdir/nested_file.txt"
+        assert result.modified[0].path == "./subdir/nested_file.txt"
