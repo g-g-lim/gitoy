@@ -223,11 +223,11 @@ class Repository:
         commit_logs = self.commit_store.list_commit_logs(head_branch.target_object_id)
         return commit_logs
 
-    def checkout(self, branch_name: str) -> Result:
-        branch_ref_name = f"refs/heads/{branch_name}"
-        branch = self.database.get_branch(branch_ref_name)
+    def checkout(self, ref_name: str) -> Result[None]:
+        ref_name = f"refs/heads/{ref_name}"
+        branch = self.database.get_branch(ref_name)
         if branch is None:
-            return Result.Fail(f"Branch '{branch_name}' not found")
+            return Result.Fail(f"Branch '{ref_name}' not found")
 
         head_branch = self.get_head_branch()
         if head_branch.ref_name == branch.ref_name:
@@ -237,8 +237,8 @@ class Repository:
 
         status_result = self.status()
         if status_result.failed:
-            return status_result
-
+            return Result.Fail(status_result.error)
+            
         changes = status_result.value
 
         assert changes is not None
@@ -256,6 +256,25 @@ class Repository:
         assert checkout_commit is not None
 
         checkout_tree = self.tree_store.build_commit_tree(checkout_commit.tree_id)
+        current_index_entries = self.index_store.find_all()
+        diff_result = self.compare_index_to_tree( current_index_entries, checkout_tree)
+        
+        # Apply changes to worktree
+        for entry in diff_result.added:
+            blob = self.database.get_blob(entry.object_id)
+            assert blob is not None
+            self.worktree.write(entry, blob.data)
+        for entry in diff_result.modified:
+            blob = self.database.get_blob(entry.object_id)
+            assert blob is not None
+            self.worktree.write(entry, blob.data)
+        for entry in diff_result.deleted:
+            self.worktree.delete(entry)
+                
+        # Apply changes to index
+        self.index_store.delete(diff_result.deleted)
+        self.index_store.update(diff_result.modified)
+        self.index_store.create(diff_result.added)
 
         self.database.update_ref(head_branch, {"ref_name": branch.ref_name})
 

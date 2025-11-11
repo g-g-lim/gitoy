@@ -108,9 +108,15 @@ class Database:
 
     def create_blobs(self, blobs: list[Blob]) -> None:
         return self.sqlite.insert_many(blobs)
+    
+    def get_blob(self, object_id: str) -> Optional[Blob]:
+        blobs = self.sqlite.select(
+            f"SELECT * FROM {Blob.table_name()} WHERE object_id = '{object_id}'"
+        )
+        return Blob(**blobs[0]) if blobs else None
 
-    def list_blobs_by_ids(self, ids: list[str]) -> list[Blob]:
-        quoted_ids = ",".join([f"'{id_}'" for id_ in ids])
+    def list_blobs_by_ids(self, object_ids: list[str]) -> list[Blob]:
+        quoted_ids = ",".join([f"'{obj_id}'" for obj_id in object_ids])
         blobs = self.sqlite.select(
             f"SELECT * FROM {Blob.table_name()} WHERE object_id IN ({quoted_ids})"
         )

@@ -3,9 +3,9 @@ from database.entity.index_entry import IndexEntry
 
 
 class DiffResult(NamedTuple):
-    added: list
-    modified: list
-    deleted: list
+    added: list[IndexEntry]
+    modified: list[IndexEntry]
+    deleted: list[IndexEntry]
 
     def is_empty(self) -> bool:
         return (

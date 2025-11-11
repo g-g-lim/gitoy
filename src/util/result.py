@@ -37,7 +37,7 @@ class Result[T]:
             return f'<Result success={self.success}, message="{self.error}">'
 
     @classmethod
-    def Fail(cls, error: str) -> "Result":
+    def Fail(cls, error: str | None) -> "Result":
         """Create a Result object for a failed operation."""
         return cls(False, value=None, error=error)
 

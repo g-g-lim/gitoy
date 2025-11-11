@@ -9,25 +9,24 @@ class IndexStore:
         self.database = database
         self.repo_path = repo_path
 
-    def create(self, entries: list[IndexEntry]) -> Result:
+    def create(self, entries: list[IndexEntry]):
         if not entries:
-            return Result.Ok([])
+            return []
         self.database.create_index_entries(entries)
-        return Result.Ok(entries)
+        return entries
 
-    def update(self, entries: list[IndexEntry]) -> Result:
-        if not entries:
-            return Result.Ok([])
-        # TODO 왜 이렇게 했지..?
-        self.database.delete_index_entries(entries)
-        self.database.create_index_entries(entries)
-        return Result.Ok(entries)
-
-    def delete(self, entries: list[IndexEntry]) -> Result:
+    def update(self, entries: list[IndexEntry]):
         if not entries:
             return Result.Ok([])
         self.database.delete_index_entries(entries)
-        return Result.Ok(entries)
+        self.database.create_index_entries(entries)
+        return entries
+
+    def delete(self, entries: list[IndexEntry]):
+        if not entries:
+            return Result.Ok([])
+        self.database.delete_index_entries(entries)
+        return entries
 
     def find_by_paths(self, paths: list[str]) -> list[IndexEntry]:
         relative_paths = self.repo_path.to_normalized_relative_paths(paths)
