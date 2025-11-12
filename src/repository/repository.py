@@ -74,6 +74,7 @@ class Repository:
         if create_ref_name == head_branch.ref_name:
             return Result.Fail(f"Branch {create_ref_name} already exists")
 
+        # 헤드 브랜치가 아직 커밋을 가리키지 않는 경우 헤드 브랜치를 새 브랜치로 변경
         if head_branch.target_object_id is None:
             self.database.update_ref(head_branch, {"ref_name": create_ref_name})
             head_branch.ref_name = create_ref_name

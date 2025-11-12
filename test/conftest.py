@@ -157,7 +157,8 @@ def test_directory(test_repo_directory):
     yield directory
 
     # Remove all files and directories under 'directory'
-    shutil.rmtree(directory)
+    if directory.exists():
+        shutil.rmtree(directory)
 
 
 @pytest.fixture(scope="function")

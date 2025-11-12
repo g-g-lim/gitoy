@@ -1924,7 +1924,6 @@ class TestRepositoryCompareIndexToTree:
 
 
 class TestRepositoryCheckout:
-    
     def test_checkout_branch(
         self,
         repository: Repository,
@@ -2014,7 +2013,7 @@ class TestRepositoryCheckout:
             assert len(logs) == 1
             assert logs[0].message == "Initial commit"
 
-            # Make changes in main branch
+            # Add new file in main branch
             _, temp_path = tempfile.mkstemp(dir=test_file_path.parent)
             main_new_file = Path(temp_path)
             main_new_file.write_text("new file in main branch")
@@ -2049,7 +2048,126 @@ class TestRepositoryCheckout:
                 file_content = f.read()
             assert file_content == "Modified content"
             assert test_file_path.stat().st_mode == path.stat().st_mode
-            
+
+    def test_checkout_on_delete_file(
+        self,
+        repository: Repository,
+        test_file_path,
+    ):
+        repository.init()
+
+        content = "Sample content"
+        test_file_path.write_text(content)
+
+        with patch("os.getcwd", return_value=test_file_path.parent.as_posix()):
+            repository.add_index([test_file_path.name])
+            repository.commit("Initial commit")
+
+            # Create and checkout new branch
+            new_branch_name = "new-branch"
+            repository.create_branch(new_branch_name)
+            repository.checkout(new_branch_name)
+
+            # Delete the file in the new branch
+            test_file_path.unlink()
+            repository.add_index([test_file_path.name])
+            repository.commit("Delete file in new branch")
+
+            assert test_file_path.parent.exists()
+
+            # Verify file is deleted in new branch
+            paths = repository.worktree.find_paths([test_file_path.name])
+            assert len(paths) == 0
+
+            # Checkout main branch and verify file is restored
+            repository.checkout("main")
+
+            paths = repository.worktree.find_paths([test_file_path.name])
+            assert len(paths) == 1
+            path = paths[0]
+            with open(path, "r") as f:
+                file_content = f.read()
+
+            assert file_content == content
+            assert path.stat().st_mode == test_file_path.stat().st_mode
+            assert path.stat().st_size == test_file_path.stat().st_size
+
+            # Checkout new branch again and verify file is deleted
+            repository.checkout(new_branch_name)
+            paths = repository.worktree.find_paths([test_file_path.name])
+            assert len(paths) == 0
+            assert test_file_path.parent.exists()
+
+            assert len(repository.index_store.find_all()) == 0
+            assert len(repository.log()) == 2
+
+    def test_checkout_on_delete_parent_directory(
+        self,
+        repository: Repository,
+        test_directory: Path,
+    ):
+        repository.init()
+
+        # Create nested directory structure
+        # sub_dir/sub_sub_dir/file.txt
+        dir_level2 = test_directory / "sub_dir"
+        dir_level2.mkdir()
+        dir_level3 = dir_level2 / "sub_sub_dir"
+        dir_level3.mkdir()
+        file_path = dir_level3 / "file.txt"
+        file_path.write_text("Sample content")
+
+        with patch("os.getcwd", return_value=test_directory.as_posix()):
+            repository.add_index([str(file_path.relative_to(test_directory))])
+            repository.commit("Initial commit")
+
+            # Create and checkout new branch
+            new_branch_name = "new-branch"
+            repository.create_branch(new_branch_name)
+            repository.checkout(new_branch_name)
+
+            # Delete the file.txt in sub_dir in the new branch
+            file_path.unlink()
+            repository.add_index([str(file_path.relative_to(test_directory))])
+            repository.commit("Delete directory in new branch")
+
+            assert dir_level3.exists()
+            assert dir_level2.exists()
+            assert test_directory.exists()
+
+            # Verify directory is deleted in new branch
+            paths = repository.worktree.find_paths(
+                [str(dir_level3.relative_to(test_directory))]
+            )
+            assert len(paths) == 0
+
+            # Checkout main branch and verify directory is restored
+            repository.checkout("main")
+
+            paths = repository.worktree.find_paths(
+                [str(file_path.relative_to(test_directory))]
+            )
+            assert len(paths) == 1
+            path = paths[0]
+            with open(path, "r") as f:
+                file_content = f.read()
+
+            assert file_content == "Sample content"
+            assert path.stat().st_mode == file_path.stat().st_mode
+            assert path.stat().st_size == file_path.stat().st_size
+
+            # Checkout new branch again and verify directory is deleted
+            repository.checkout(new_branch_name)
+            paths = repository.worktree.find_paths(
+                [str(dir_level3.relative_to(test_directory))]
+            )
+            assert len(paths) == 0
+            assert not dir_level3.exists()
+            assert not dir_level2.exists()
+            assert not test_directory.exists()
+
+            assert len(repository.index_store.find_all()) == 0
+
     def test_checkout_nonexistent_branch(
         self,
         repository: Repository,
@@ -2059,3 +2177,60 @@ class TestRepositoryCheckout:
         result = repository.checkout("nonexistent-branch")
         assert not result.success
         assert result.error == "Branch 'refs/heads/nonexistent-branch' not found"
+
+    def test_checkout_same_branch(
+        self,
+        repository: Repository,
+        test_file_path,
+    ):
+        repository.init()
+
+        content = "Sample content"
+        test_file_path.write_text(content)
+
+        with patch("os.getcwd", return_value=test_file_path.parent.as_posix()):
+            repository.add_index([test_file_path.name])
+            repository.commit("Initial commit")
+
+            # Checkout the same branch 'main'
+            result = repository.checkout("main")
+            assert result.success
+
+            head = repository.get_head_branch()
+            assert head is not None
+            assert head.branch_name == "main"
+
+    def test_checkout_exist_uncommitted_changes(
+        self,
+        repository: Repository,
+        test_file_path,
+    ):
+        repository.init()
+
+        with patch("os.getcwd", return_value=test_file_path.parent.as_posix()):
+            repository.add_index([test_file_path.name])
+            repository.commit("Initial commit")
+
+            _, temp_path = tempfile.mkstemp(dir=repository.worktree.root_dir)
+            uncommitted_file = Path(temp_path)
+            uncommitted_file.write_text("uncommitted changes")
+
+            # Create and checkout new branch
+            new_branch_name = "new-branch"
+            result = repository.create_branch(new_branch_name)
+            assert result.success
+
+            status_result = repository.status()
+
+            assert status_result.success
+            status = status_result.value
+            assert status is not None
+            assert status.branch_name == "main"
+            assert len(status.unstaged.added) == 1
+
+            result = repository.checkout(new_branch_name)
+            assert not result.success
+            assert (
+                result.error
+                == "You have uncommitted changes. Please commit or stash them before checkout."
+            )
