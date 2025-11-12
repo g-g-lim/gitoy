@@ -6,6 +6,7 @@ Gitoy CLI - A simple File Version Control CLI tool built with Python Fire
 import fire
 import sys
 
+from repository.entry_diff import EntryDiff
 import zstandard
 
 from repository.blob_store import BlobStore
@@ -87,6 +88,7 @@ def main():
     path_validator = PathValidator(worktree, index_store)
     tree_store = TreeStore(database)
     commit_store = CommitStore(database)
+    entry_dff = EntryDiff()
     repository = Repository(
         database,
         repository_path,
@@ -99,6 +101,7 @@ def main():
         path_validator,
         tree_store,
         commit_store,
+        entry_dff,
     )
     console = Console()
     commands = [

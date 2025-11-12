@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Optional
-from custom_types import Changes, StatusResult
+from custom_types import Diff, StatusResult
 from database.entity.commit import Commit
 from repository.blob_store import BlobStore
 from repository.commit_store import CommitStore
@@ -10,10 +10,8 @@ from repository.path_validator import PathValidator
 from repository.repo_path import RepositoryPath
 from database.database import Database
 from repository.tree_store import TreeStore
-from database.entity.index_entry import IndexEntry
-from repository.entry_diff import DiffResult, EntryDiff
+from repository.entry_diff import EntryDiff
 from database.entity.ref import Ref
-from repository.tree import Tree
 from util.result import Result
 from repository.worktree import Worktree
 from repository.hash_file import HashFile
@@ -34,6 +32,7 @@ class Repository:
         path_validator: PathValidator,
         tree_store: TreeStore,
         commit_store: CommitStore,
+        entry_diff: EntryDiff,
     ):
         self.database = database
         self.path = repository_path
@@ -46,6 +45,7 @@ class Repository:
         self.path_validator = path_validator
         self.tree_store = tree_store
         self.commit_store = commit_store
+        self.entry_diff = entry_diff
 
     @property
     def worktree_path(self):
@@ -121,16 +121,11 @@ class Repository:
     def hash(self, path: Path) -> str:
         return self.hash_file.hash(path)
 
-    def compare_worktree_to_index(self, paths: list[str | Path]) -> DiffResult:
+    def compare_worktree_to_index(self, paths: list[str | Path]) -> Diff:
         index_entries = self.index_store.find_by_paths(paths)
         worktree_paths = self.worktree.find_paths(paths)
         worktree_entries = [self.convert.path_to_index_entry(p) for p in worktree_paths]
-        return EntryDiff(worktree_entries, index_entries).diff()
-
-    def compare_index_to_tree(
-        self, index_entries: list[IndexEntry], tree: Tree
-    ) -> DiffResult:
-        return EntryDiff(index_entries, tree.list_index_entries()).diff()
+        return self.entry_diff.diff(worktree_entries, index_entries)
 
     def add_index(self, paths: list[str]):
         result = self.path_validator.validate(paths)
@@ -163,7 +158,7 @@ class Repository:
         index_diff_result = self.compare_worktree_to_index([worktree_path.as_posix()])
 
         status_result = StatusResult(branch_name)
-        status_result.unstaged = Changes(
+        status_result.unstaged = Diff(
             index_diff_result.added,
             index_diff_result.modified,
             index_diff_result.deleted,
@@ -177,7 +172,7 @@ class Repository:
 
         tree = self.tree_store.build_commit_tree(tree_id)
         index_entries = self.database.list_index_entries()
-        tree_diff_result = self.compare_index_to_tree(index_entries, tree)
+        tree_diff_result = self.entry_diff.diff(index_entries, tree.list_index_entries())
         status_result.staged.added = tree_diff_result.added
         status_result.staged.modified = tree_diff_result.modified
         status_result.staged.deleted = tree_diff_result.deleted
@@ -195,7 +190,7 @@ class Repository:
         )
         index_entries = self.index_store.find_all()
 
-        diff_result = self.compare_index_to_tree(index_entries, commit_tree)
+        diff_result = self.entry_diff.diff(index_entries, commit_tree.list_index_entries())
         if diff_result.is_empty():
             return None
 
@@ -260,9 +255,9 @@ class Repository:
 
         checkout_tree = self.tree_store.build_commit_tree(checkout_commit.tree_id)
         current_index_entries = self.index_store.find_all()
-        diff_result = EntryDiff(
+        diff_result = self.entry_diff.diff(
             checkout_tree.list_index_entries(), current_index_entries
-        ).diff()
+        )
 
         # Apply changes to worktree
         for entry in diff_result.added:

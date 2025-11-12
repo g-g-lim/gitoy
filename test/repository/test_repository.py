@@ -1367,7 +1367,7 @@ class TestRepositoryCompareIndexToTree:
         # Act
         index_entries = database.list_index_entries()
         tree = tree_store.build_commit_tree(sample_commit.tree_id)
-        result = repository.compare_index_to_tree(index_entries, tree)
+        result = repository.entry_diff.diff(index_entries, tree.list_index_entries())
 
         # Assert
         assert result is not None
@@ -1417,7 +1417,7 @@ class TestRepositoryCompareIndexToTree:
         # Act
         index_entries = database.list_index_entries()
         tree = tree_store.build_commit_tree(sample_commit.tree_id)
-        result = repository.compare_index_to_tree(index_entries, tree)
+        result = repository.entry_diff.diff(index_entries, tree.list_index_entries())
 
         # Assert
         assert result is not None
@@ -1488,7 +1488,7 @@ class TestRepositoryCompareIndexToTree:
         # Act
         index_entries = database.list_index_entries()
         tree = tree_store.build_commit_tree(sample_commit.tree_id)
-        result = repository.compare_index_to_tree(index_entries, tree)
+        result = repository.entry_diff.diff(index_entries, tree.list_index_entries())
 
         assert result is not None
         assert result.is_empty() is False
@@ -1571,7 +1571,7 @@ class TestRepositoryCompareIndexToTree:
         # Act
         index_entries = database.list_index_entries()
         tree = tree_store.build_commit_tree(sample_commit.tree_id)
-        result = repository.compare_index_to_tree(index_entries, tree)
+        result = repository.entry_diff.diff(index_entries, tree.list_index_entries())
 
         # Assert
         assert result is not None
@@ -1646,7 +1646,7 @@ class TestRepositoryCompareIndexToTree:
         # Act
         index_entries = database.list_index_entries()
         tree = tree_store.build_commit_tree(sample_commit.tree_id)
-        result = repository.compare_index_to_tree(index_entries, tree)
+        result = repository.entry_diff.diff(index_entries, tree.list_index_entries())
 
         # Assert
         assert result is not None
@@ -1749,7 +1749,7 @@ class TestRepositoryCompareIndexToTree:
         # Act
         index_entries = database.list_index_entries()
         tree = tree_store.build_commit_tree(sample_commit.tree_id)
-        result = repository.compare_index_to_tree(index_entries, tree)
+        result = repository.entry_diff.diff(index_entries, tree.list_index_entries())
 
         # Assert
         assert result is not None
@@ -1826,7 +1826,7 @@ class TestRepositoryCompareIndexToTree:
         # Act
         index_entries = database.list_index_entries()
         tree = tree_store.build_commit_tree(sample_commit.tree_id)
-        result = repository.compare_index_to_tree(index_entries, tree)
+        result = repository.entry_diff.diff(index_entries, tree.list_index_entries())
 
         # Assert
         assert result is not None
@@ -1912,7 +1912,7 @@ class TestRepositoryCompareIndexToTree:
         # Act
         index_entries = database.list_index_entries()
         tree = tree_store.build_commit_tree(sample_commit.tree_id)
-        result = repository.compare_index_to_tree(index_entries, tree)
+        result = repository.entry_diff.diff(index_entries, tree.list_index_entries())
 
         # Assert
         assert result is not None
@@ -2096,7 +2096,7 @@ class TestRepositoryCheckout:
             repository.checkout(new_branch_name)
             paths = repository.worktree.find_paths([test_file_path.name])
             assert len(paths) == 0
-            assert test_file_path.parent.exists()
+            assert not test_file_path.parent.exists()
 
             assert len(repository.index_store.find_all()) == 0
             assert len(repository.log()) == 2

@@ -8,6 +8,8 @@ from pathlib import Path
 import sys
 import tempfile
 
+from src.repository.entry_diff import EntryDiff
+
 from src.repository.commit_store import CommitStore
 from src.repository.compress_file import CompressFile
 from src.repository.convert import Convert
@@ -118,6 +120,11 @@ def commit_store(database: Database):
 
 
 @pytest.fixture(scope="function")
+def entry_diff():
+    return EntryDiff()
+
+
+@pytest.fixture(scope="function")
 def repository(
     database,
     repository_path,
@@ -130,6 +137,7 @@ def repository(
     path_validator,
     tree_store,
     commit_store,
+    entry_diff,
 ):
     return Repository(
         database,
@@ -143,6 +151,7 @@ def repository(
         path_validator,
         tree_store,
         commit_store,
+        entry_diff,
     )
 
 
