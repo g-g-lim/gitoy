@@ -1,5 +1,6 @@
 import hashlib
 from typing import Optional
+from custom_types import Diff
 from database.entity.index_entry import IndexEntry
 from database.entity.tree_entry import TreeEntry
 from util.path import accumulate_paths
@@ -109,7 +110,7 @@ class Tree:
             self.index.remove(parent_tree_entry.relative_path)
             parent_tree_entry = parent_parent
 
-    def update(self, index_entry: IndexEntry):
+    def modify(self, index_entry: IndexEntry):
         paths = accumulate_paths(index_entry.path)
         for path in paths:
             tree_entry = self.index.get(path)
@@ -147,3 +148,12 @@ class Tree:
             _hash_tree_entry(self.root_entry)
 
         return updated_entries
+    
+    def apply_diff(self, diff: Diff):
+        for entry in diff.added:
+            self.add(entry)
+        for entry in diff.modified:
+            self.modify(entry)
+        for entry in diff.deleted:
+            self.remove(entry)
+        return self.build_object_ids()

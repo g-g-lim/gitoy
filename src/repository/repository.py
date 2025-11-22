@@ -157,7 +157,7 @@ class Repository:
 
         tree = self.tree_store.build_commit_tree(tree_id)
         index_entries = self.database.list_index_entries()
-        return self.entry_diff.diff(index_entries, tree.list_index_entries())
+        return tree, self.entry_diff.diff(index_entries, tree.list_index_entries())
 
     def status(self) -> Result[StatusResult]:
         if not self.is_initialized():
@@ -167,7 +167,8 @@ class Repository:
         
         result = StatusResult(branch_name)
         result.unstaged = self.get_unstaged_changes([self.worktree_path.as_posix()])
-        result.staged = self.get_staged_changes(head_branch)
+        _, staged = self.get_staged_changes(head_branch)
+        result.staged = staged
         return Result.Ok(result)
 
     def commit(self, message: str) -> Optional[Commit]:
@@ -176,24 +177,11 @@ class Repository:
         if head_branch.target_object_id is not None:
             head_commit = self.database.get_commit(head_branch.target_object_id)
 
-        commit_tree = self.tree_store.build_commit_tree(
-            "" if head_commit is None else head_commit.tree_id
-        )
-        index_entries = self.index_store.find_all()
-
-        diff_result = self.entry_diff.diff(index_entries, commit_tree.list_index_entries())
-        if diff_result.is_empty():
+        commit_tree, staged = self.get_staged_changes(head_branch)
+        if staged.is_empty():
             return None
 
-        for entry in diff_result.added:
-            commit_tree.add(entry)
-        for entry in diff_result.modified:
-            commit_tree.update(entry)
-        for entry in diff_result.deleted:
-            commit_tree.remove(entry)
-
-        updated_entries = commit_tree.build_object_ids()
-
+        updated_entries = commit_tree.apply_diff(staged)
         commit_ref_tree = self.tree_store.save_commit_tree(updated_entries)
 
         assert commit_ref_tree.entry_object_id is not None
@@ -201,7 +189,6 @@ class Repository:
         new_commit = self.commit_store.save_commit(
             commit_ref_tree.entry_object_id, message, head_commit
         )
-
         self.database.update_ref(
             head_branch, {"target_object_id": new_commit.object_id}
         )
@@ -227,14 +214,8 @@ class Repository:
 
         assert checkout_branch.target_object_id is not None
 
-        status_result = self.status()
-        if status_result.failed:
-            return Result.Fail(status_result.error)
-
-        changes = status_result.value
-        assert changes is not None
-        staged = changes.staged
-        unstaged = changes.unstaged
+        unstaged= self.get_unstaged_changes([self.worktree_path.as_posix()])
+        _, staged = self.get_staged_changes(head_branch)
 
         if not staged.is_empty() or not unstaged.is_empty():
             return Result.Fail(

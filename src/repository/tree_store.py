@@ -7,7 +7,7 @@ class TreeStore:
     def __init__(self, database: Database):
         self.database = database
 
-    def build_commit_tree(self, root_tree_id: str) -> Tree:
+    def build_commit_tree(self, root_tree_id: str) -> Tree:        
         root_tree = self.database.get_root_tree_entry(root_tree_id)
         tree = Tree(root_tree)
         if root_tree is None:
@@ -45,7 +45,6 @@ class TreeStore:
                             "tree": child_tree_entry,
                         }
                     )
-
         return tree
 
     def save_commit_tree(self, tree_entries: list[TreeEntry]) -> TreeEntry:

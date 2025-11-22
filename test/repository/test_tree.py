@@ -154,7 +154,7 @@ class TestTreeAddUpdateDelete:
         updated_entry = IndexEntry(
             path="./a/b/c.txt", object_id="new_oid", mode="100755"
         )
-        tree.update(updated_entry)
+        tree.modify(updated_entry)
 
         # Then
         # Check that the blob entry is updated
@@ -360,7 +360,7 @@ class TestTreeBuildObjectIds:
             path="./a/b/c.txt", object_id="new_oid_c", mode="100644"
         )
 
-        tree.update(new_entry_c)
+        tree.modify(new_entry_c)
 
         tree_b = tree.get_entry("./a/b")
         blob_c = tree.get_entry("./a/b/c.txt")
@@ -481,7 +481,7 @@ class TestTreeBuildObjectIds:
         update_entry_ab = IndexEntry(
             path="./a/b.txt", object_id="oid_bcdef", mode="100644"
         )
-        tree.update(update_entry_ab)
+        tree.modify(update_entry_ab)
 
         tree.build_object_ids()
         assert tree.root_entry is not None
@@ -489,7 +489,7 @@ class TestTreeBuildObjectIds:
 
         tree = Tree()
         tree.add(entry_ab)
-        tree.update(update_entry_ab)
+        tree.modify(update_entry_ab)
 
         tree.build_object_ids()
 
