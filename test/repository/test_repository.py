@@ -1164,7 +1164,7 @@ class TestRepositoryCompareIndexToWorktree:
         with mock.patch(
             "os.getcwd", return_value=repository_path.worktree_path.as_posix()
         ):
-            result = repository.compare_worktree_to_index([test_file_path.parent.name])
+            result = repository.get_unstaged_changes([test_file_path.parent.name])
             assert len(result.added) == 1
             assert result.added[0] == convert.path_to_index_entry(test_file_path)
             assert result.deleted == []
@@ -1187,7 +1187,7 @@ class TestRepositoryCompareIndexToWorktree:
 
             path.unlink()
 
-            result = repository.compare_worktree_to_index([_path])
+            result = repository.get_unstaged_changes([_path])
             assert result.added == []
             assert len(result.deleted) == 1
             assert result.deleted[0] == index_entry
@@ -1210,7 +1210,7 @@ class TestRepositoryCompareIndexToWorktree:
 
             path.write_text("modified")
 
-            result = repository.compare_worktree_to_index([_path])
+            result = repository.get_unstaged_changes([_path])
             assert result.added == []
             assert result.deleted == []
             assert len(result.modified) == 1
@@ -1234,7 +1234,7 @@ class TestRepositoryCompareIndexToWorktree:
 
             _, _path2 = tempfile.mkstemp(dir=test_directory)
 
-            result = repository.compare_worktree_to_index([_path, _path2])
+            result = repository.get_unstaged_changes([_path, _path2])
             assert len(result.added) == 1
             assert result.added[0] == convert.path_to_index_entry(Path(_path2))
             assert result.deleted == []
@@ -1243,7 +1243,7 @@ class TestRepositoryCompareIndexToWorktree:
 
             path.unlink()
 
-            result = repository.compare_worktree_to_index([_path, _path2])
+            result = repository.get_unstaged_changes([_path, _path2])
             assert len(result.added) == 1
             assert len(result.deleted) == 1
             assert len(result.modified) == 0
@@ -1253,24 +1253,24 @@ class TestRepositoryCompareIndexToWorktree:
             database.create_index_entries([index_entry2])
             path2.write_text("modified")
 
-            result = repository.compare_worktree_to_index([_path, _path2])
+            result = repository.get_unstaged_changes([_path, _path2])
             assert len(result.added) == 0
             assert len(result.deleted) == 1
             assert len(result.modified) == 1
 
             _, _path3 = tempfile.mkstemp(dir=test_directory)
 
-            result = repository.compare_worktree_to_index([_path, _path2, _path3])
+            result = repository.get_unstaged_changes([_path, _path2, _path3])
             assert len(result.added) == 1
             assert len(result.deleted) == 1
             assert len(result.modified) == 1
 
-            result = repository.compare_worktree_to_index([_path, _path2])
+            result = repository.get_unstaged_changes([_path, _path2])
             assert len(result.added) == 0
             assert len(result.deleted) == 1
             assert len(result.modified) == 1
 
-            result = repository.compare_worktree_to_index([_path2, _path3])
+            result = repository.get_unstaged_changes([_path2, _path3])
             assert len(result.added) == 1
             assert len(result.deleted) == 0
             assert len(result.modified) == 1
@@ -1293,18 +1293,18 @@ class TestRepositoryCompareIndexToWorktree:
             renamed = path.with_name("renamed")
             path.rename(renamed)
 
-            result = repository.compare_worktree_to_index([renamed.name])
+            result = repository.get_unstaged_changes([renamed.name])
             assert len(result.added) == 1
             assert result.added[0] == convert.path_to_index_entry(renamed)
             assert result.deleted == []
             assert result.modified == []
 
-            result = repository.compare_worktree_to_index(["."])
+            result = repository.get_unstaged_changes(["."])
             assert len(result.added) == 1
             assert len(result.deleted) == 1
             assert result.modified == []
 
-            result = repository.compare_worktree_to_index([f"../{test_directory.name}"])
+            result = repository.get_unstaged_changes([f"../{test_directory.name}"])
             assert len(result.added) == 1
             assert len(result.deleted) == 1
             assert result.modified == []
@@ -1334,7 +1334,7 @@ class TestRepositoryCompareIndexToWorktree:
 
             _, _path3 = tempfile.mkstemp(dir=test_directory)
 
-            result = repository.compare_worktree_to_index([_path, _path2, _path3, "./"])
+            result = repository.get_unstaged_changes([_path, _path2, _path3, "./"])
             assert len(result.added) == 1
             assert len(result.deleted) == 1
             assert len(result.modified) == 1

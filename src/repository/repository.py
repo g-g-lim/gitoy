@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Optional
-from custom_types import Diff, StatusResult
+from custom_types import StatusResult
 from database.entity.commit import Commit
 from repository.blob_store import BlobStore
 from repository.commit_store import CommitStore
@@ -121,18 +121,12 @@ class Repository:
     def hash(self, path: Path) -> str:
         return self.hash_file.hash(path)
 
-    def compare_worktree_to_index(self, paths: list[str | Path]) -> Diff:
-        index_entries = self.index_store.find_by_paths(paths)
-        worktree_paths = self.worktree.find_paths(paths)
-        worktree_entries = [self.convert.path_to_index_entry(p) for p in worktree_paths]
-        return self.entry_diff.diff(worktree_entries, index_entries)
-
     def add_index(self, paths: list[str]):
         result = self.path_validator.validate(paths)
         if result.failed:
             return result
 
-        diff_result = self.compare_worktree_to_index(paths)
+        diff_result = self.get_unstaged_changes(paths)
         if diff_result.is_empty():
             return Result.Ok(None)
 
@@ -147,23 +141,14 @@ class Repository:
         self.blob_store.create(blobs)
 
         return Result.Ok(None)
-
-    def status(self) -> Result[StatusResult]:
-        if not self.is_initialized():
-            return Result.Fail("Not a gitoy repository")
-        head_branch = self.get_head_branch()
-        branch_name = head_branch.branch_name
-
-        worktree_path = self.worktree_path
-        index_diff_result = self.compare_worktree_to_index([worktree_path.as_posix()])
-
-        status_result = StatusResult(branch_name)
-        status_result.unstaged = Diff(
-            index_diff_result.added,
-            index_diff_result.modified,
-            index_diff_result.deleted,
-        )
-
+    
+    def get_unstaged_changes(self, paths): # TODO parameter type
+        index_entries = self.index_store.find_by_paths(paths)
+        worktree_paths = self.worktree.find_paths(paths)
+        worktree_entries = [self.convert.path_to_index_entry(p) for p in worktree_paths]
+        return self.entry_diff.diff(worktree_entries, index_entries)
+        
+    def get_staged_changes(self, head_branch: Ref):
         tree_id = ""
         if head_branch.target_object_id is not None:
             head_commit = self.database.get_commit(head_branch.target_object_id)
@@ -172,12 +157,18 @@ class Repository:
 
         tree = self.tree_store.build_commit_tree(tree_id)
         index_entries = self.database.list_index_entries()
-        tree_diff_result = self.entry_diff.diff(index_entries, tree.list_index_entries())
-        status_result.staged.added = tree_diff_result.added
-        status_result.staged.modified = tree_diff_result.modified
-        status_result.staged.deleted = tree_diff_result.deleted
+        return self.entry_diff.diff(index_entries, tree.list_index_entries())
 
-        return Result.Ok(status_result)
+    def status(self) -> Result[StatusResult]:
+        if not self.is_initialized():
+            return Result.Fail("Not a gitoy repository")
+        head_branch = self.get_head_branch()
+        branch_name = head_branch.branch_name
+        
+        result = StatusResult(branch_name)
+        result.unstaged = self.get_unstaged_changes([self.worktree_path.as_posix()])
+        result.staged = self.get_staged_changes(head_branch)
+        return Result.Ok(result)
 
     def commit(self, message: str) -> Optional[Commit]:
         head_branch = self.get_head_branch()
