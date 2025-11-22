@@ -148,16 +148,16 @@ class Repository:
         worktree_entries = [self.convert.path_to_index_entry(p) for p in worktree_paths]
         return self.entry_diff.diff(worktree_entries, index_entries)
         
-    def get_staged_changes(self, head_branch: Ref):
+    def get_staged_changes(self, ref: Ref):
         tree_id = ""
-        if head_branch.target_object_id is not None:
-            head_commit = self.database.get_commit(head_branch.target_object_id)
+        if ref.target_object_id is not None:
+            head_commit = self.database.get_commit(ref.target_object_id)
             assert head_commit is not None
             tree_id = head_commit.tree_id
 
         tree = self.tree_store.build_commit_tree(tree_id)
         index_entries = self.database.list_index_entries()
-        return tree, self.entry_diff.diff(index_entries, tree.list_index_entries())
+        return self.entry_diff.diff(index_entries, tree.list_index_entries())
 
     def status(self) -> Result[StatusResult]:
         if not self.is_initialized():
@@ -167,8 +167,7 @@ class Repository:
         
         result = StatusResult(branch_name)
         result.unstaged = self.get_unstaged_changes([self.worktree_path.as_posix()])
-        _, staged = self.get_staged_changes(head_branch)
-        result.staged = staged
+        result.staged = self.get_staged_changes(head_branch)
         return Result.Ok(result)
 
     def commit(self, message: str) -> Optional[Commit]:
@@ -176,12 +175,22 @@ class Repository:
         head_commit = None
         if head_branch.target_object_id is not None:
             head_commit = self.database.get_commit(head_branch.target_object_id)
-
-        commit_tree, staged = self.get_staged_changes(head_branch)
+            
+        tree_id = ""
+        if head_branch.target_object_id is not None:
+            head_commit = self.database.get_commit(head_branch.target_object_id)
+            assert head_commit is not None
+            tree_id = head_commit.tree_id
+        
+        commit_tree = self.tree_store.build_commit_tree(tree_id)
+        index_entries = self.database.list_index_entries()
+        diff = self.entry_diff.diff(index_entries, commit_tree.list_index_entries())
+    
+        staged = self.get_staged_changes(head_branch)
         if staged.is_empty():
             return None
 
-        updated_entries = commit_tree.apply_diff(staged)
+        updated_entries = commit_tree.apply_diff(diff)
         commit_ref_tree = self.tree_store.save_commit_tree(updated_entries)
 
         assert commit_ref_tree.entry_object_id is not None
@@ -212,43 +221,41 @@ class Repository:
         if head_branch.ref_name == checkout_branch.ref_name:
             return Result.Ok(None)
 
-        assert checkout_branch.target_object_id is not None
-
         unstaged= self.get_unstaged_changes([self.worktree_path.as_posix()])
-        _, staged = self.get_staged_changes(head_branch)
+        staged = self.get_staged_changes(head_branch)
 
         if not staged.is_empty() or not unstaged.is_empty():
             return Result.Fail(
                 "You have uncommitted changes. Please commit or stash them before checkout."
             )
-
+        
+        assert checkout_branch.target_object_id is not None
         checkout_commit = self.database.get_commit(checkout_branch.target_object_id)
         assert checkout_commit is not None
-
         checkout_tree = self.tree_store.build_commit_tree(checkout_commit.tree_id)
         current_index_entries = self.index_store.find_all()
-        diff_result = self.entry_diff.diff(
+        diff = self.entry_diff.diff(
             checkout_tree.list_index_entries(), current_index_entries
         )
 
         # Apply changes to worktree
-        for entry in diff_result.added:
+        for entry in diff.added:
             blob = self.database.get_blob(entry.object_id)
             assert blob is not None
             self.worktree.write(entry, self.compress_file.decompress(blob.data))
             entry.size = blob.size
-        for entry in diff_result.modified:
+        for entry in diff.modified:
             blob = self.database.get_blob(entry.object_id)
             assert blob is not None
             self.worktree.write(entry, self.compress_file.decompress(blob.data))
             entry.size = blob.size
-        for entry in diff_result.deleted:
+        for entry in diff.deleted:
             self.worktree.delete(entry)
 
         # Apply changes to index
-        self.index_store.delete(diff_result.deleted)
-        self.index_store.update(diff_result.modified)
-        self.index_store.create(diff_result.added)
+        self.index_store.delete(diff.deleted)
+        self.index_store.update(diff.modified)
+        self.index_store.create(diff.added)
 
         self.update_head_branch(head_branch, checkout_branch)
 

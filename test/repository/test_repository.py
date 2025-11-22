@@ -1957,7 +1957,7 @@ class TestRepositoryCheckout:
             assert status.staged.is_empty()
             assert status.unstaged.is_empty()
 
-            checkout_branch_entries = repository.index_store.find_all()
+            checkout_branch_entries = repository.database.list_index_entries()
             assert len(checkout_branch_entries) == 1
             assert checkout_branch_entries[0] == test_file_entry
 
@@ -2037,7 +2037,7 @@ class TestRepositoryCheckout:
             assert status.staged.is_empty()
             assert status.unstaged.is_empty()
 
-            checkout_branch_entries = repository.index_store.find_all()
+            checkout_branch_entries = repository.database.list_index_entries()
             assert len(checkout_branch_entries) == 1
             assert checkout_branch_entries[0] == modified_index_entries[0]
 
@@ -2098,7 +2098,7 @@ class TestRepositoryCheckout:
             assert len(paths) == 0
             assert not test_file_path.parent.exists()
 
-            assert len(repository.index_store.find_all()) == 0
+            assert len(repository.database.list_index_entries()) == 0
             assert len(repository.log()) == 2
 
     def test_checkout_on_delete_parent_directory(
@@ -2166,7 +2166,7 @@ class TestRepositoryCheckout:
             assert not dir_level2.exists()
             assert not test_directory.exists()
 
-            assert len(repository.index_store.find_all()) == 0
+            assert len(repository.database.list_index_entries()) == 0
 
     def test_checkout_nonexistent_branch(
         self,
