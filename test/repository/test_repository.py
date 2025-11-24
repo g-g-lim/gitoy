@@ -1362,6 +1362,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
+            generation_number=0
         )
 
         # Act
@@ -1394,6 +1395,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
+            generation_number=0
         )
 
         # Add files to index
@@ -1449,6 +1451,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
+            generation_number=0
         )
 
         database.create_commit(sample_commit)
@@ -1515,6 +1518,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
+            generation_number=0
         )
 
         database.sqlite.insert(sample_commit)
@@ -1603,6 +1607,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
+            generation_number=0
         )
 
         database.sqlite.insert(sample_commit)
@@ -1674,6 +1679,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
+            generation_number=0
         )
 
         database.sqlite.insert(sample_commit)
@@ -1785,6 +1791,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
+            generation_number=0
         )
 
         database.sqlite.insert(sample_commit)
@@ -1859,6 +1866,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
+            generation_number=0
         )
 
         database.sqlite.insert(sample_commit)

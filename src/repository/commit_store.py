@@ -9,6 +9,14 @@ from database.entity.commit_parent import CommitParent
 class CommitStore:
     def __init__(self, database: Database):
         self.database = database
+        
+    def _hash(self, commit_data: dict):
+        hash_data = "\n".join(map(str, commit_data.values()))
+        hash_data.encode()
+        sha1 = hashlib.sha1()
+        sha1.update(hash_data.encode())
+        commit_data["object_id"] = sha1.hexdigest()
+        return commit_data
 
     # TODO: config 구현 후 계정 정보 조회 기능 추가 설정
     def save_commit(
@@ -25,12 +33,9 @@ class CommitStore:
             "committer_date": commit_datetime,
             "message": message,
             "created_at": commit_datetime,
+            "generation_number": 0 if parent_commit is None else parent_commit.generation_number + 1
         }
-        hash_data = "\n".join(commit_data.values())
-        hash_data.encode()
-        sha1 = hashlib.sha1()
-        sha1.update(hash_data.encode())
-        commit_data["object_id"] = sha1.hexdigest()
+        commit_data = self._hash(commit_data)
         new_commit = Commit(**commit_data)
         if parent_commit is not None:
             commit_parent = CommitParent(

@@ -19,6 +19,7 @@ class Commit(Entity):
         committer_email: Committer email
         committer_date: Committer timestamp
         message: Commit message
+        generation number: Commit graph depth
         created_at: Object creation time
     """
 
@@ -26,12 +27,13 @@ class Commit(Entity):
     tree_id: str
     author_name: str
     author_email: str
-    author_date: datetime
+    author_date: str
     committer_name: str
     committer_email: str
-    committer_date: datetime
+    committer_date: str
     message: str
-    created_at: datetime
+    generation_number: int
+    created_at: str
 
     @staticmethod
     def table_name():
@@ -49,5 +51,6 @@ class Commit(Entity):
             "committer_email TEXT",
             "committer_date DATETIME",
             "message TEXT",
+            "generation_number INTEGER",
             "created_at DATETIME",
         ]
