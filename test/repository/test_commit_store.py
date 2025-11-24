@@ -10,7 +10,7 @@ class TestCommitStore:
         commit_db = repository.database.get_commit(commit.object_id)
         assert commit_db is not None
         assert commit_db.message == "commit message"
-        assert commit_db.generation_number == 0
+        assert commit_db.generation == 0
 
     def test_save_commit_with_parent(
         self, repository: Repository
@@ -21,7 +21,7 @@ class TestCommitStore:
         child_commit = repository.database.get_commit(_child_commit.object_id)
         
         assert child_commit is not None
-        assert child_commit.generation_number == 1
+        assert child_commit.generation == 1
         
         commit_children = repository.database.get_commit_children(parent_commit.object_id)
         assert commit_children is not None

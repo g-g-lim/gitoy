@@ -1,3 +1,5 @@
+import collections
+import heapq
 from pathlib import Path
 from typing import Optional
 from custom_types import StatusResult
@@ -254,3 +256,42 @@ class Repository:
         self.update_head_branch(head_branch, checkout_branch)
 
         return Result.Ok(None)
+    
+    def find_merge_base(self, one: Commit, two: Commit) -> Optional[Commit]:
+        A = 1
+        B = 2
+        BOTH = 3
+        
+        pq: list[tuple[int, str]] = []        
+        flags = collections.defaultdict(int)
+        
+        heapq.heappush(pq, (-one.generation, one.object_id))
+        flags[one.object_id] |= A
+        heapq.heappush(pq, (-two.generation, two.object_id))
+        flags[two.object_id] |= B
+        
+        in_pq = {one.object_id, two.object_id}
+        
+        while pq:
+            _, current = heapq.heappop(pq)
+            current_flags = flags[current]
+            
+            if current_flags == BOTH:
+                return self.database.get_commit(current)
+            
+            parents: list[Commit] = self.commit_store.get_commit_parents(current)
+            
+            for parent in parents:
+                old_flags = flags[parent.object_id]
+                new_flags = old_flags | current_flags
+                
+                if old_flags != new_flags:
+                    flags[parent.object_id] = new_flags
+                    if parent.object_id not in in_pq:
+                        heapq.heappush(pq, (-parent.generation, parent.object_id))
+                        in_pq.add(parent.object_id)
+                        
+        return None
+
+            
+            

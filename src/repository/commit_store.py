@@ -33,13 +33,44 @@ class CommitStore:
             "committer_date": commit_datetime,
             "message": message,
             "created_at": commit_datetime,
-            "generation_number": 0 if parent_commit is None else parent_commit.generation_number + 1
+            "generation": 0 if parent_commit is None else parent_commit.generation + 1
         }
+        
         commit_data = self._hash(commit_data)
         new_commit = Commit(**commit_data)
+        
         if parent_commit is not None:
             commit_parent = CommitParent(
                 new_commit.object_id, parent_commit.object_id, 0
+            )
+            self.database.create_commit_parent(commit_parent)
+        return self.database.create_commit(new_commit)
+    
+    def save_merge_commit(self, ref_tree_id: str,parent_commits: list[Commit],  message: Optional[str] = None) -> Commit:
+        commit_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        generation = max([p.generation for p in parent_commits]) + 1
+        if message is None:
+            message = 'Merge commit'
+            
+        commit_data = {
+            "tree_id": ref_tree_id,
+            "author_name": "",
+            "author_email": "",
+            "author_date": commit_datetime,
+            "committer_name": "",
+            "committer_email": "",
+            "committer_date": commit_datetime,
+            "message": message,
+            "created_at": commit_datetime,
+            "generation": generation
+        }
+        
+        commit_data = self._hash(commit_data)
+        new_commit = Commit(**commit_data)
+        
+        for p in parent_commits:
+            commit_parent = CommitParent(
+                new_commit.object_id, p.object_id, 0
             )
             self.database.create_commit_parent(commit_parent)
         return self.database.create_commit(new_commit)
@@ -60,3 +91,10 @@ class CommitStore:
                 commits.append(current)
 
         return commits
+    
+    def get_commit_parents(self, commit_object_id: str): 
+        parents = self.database.get_commit_parents(commit_object_id)
+        parent_ids = [p.parent_id for p in parents] 
+        return self.database.list_commits(parent_ids)
+        
+

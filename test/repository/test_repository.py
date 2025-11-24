@@ -1362,7 +1362,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
-            generation_number=0
+            generation=0
         )
 
         # Act
@@ -1395,7 +1395,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
-            generation_number=0
+            generation=0
         )
 
         # Add files to index
@@ -1451,7 +1451,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
-            generation_number=0
+            generation=0
         )
 
         database.create_commit(sample_commit)
@@ -1518,7 +1518,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
-            generation_number=0
+            generation=0
         )
 
         database.sqlite.insert(sample_commit)
@@ -1607,7 +1607,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
-            generation_number=0
+            generation=0
         )
 
         database.sqlite.insert(sample_commit)
@@ -1679,7 +1679,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
-            generation_number=0
+            generation=0
         )
 
         database.sqlite.insert(sample_commit)
@@ -1791,7 +1791,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
-            generation_number=0
+            generation=0
         )
 
         database.sqlite.insert(sample_commit)
@@ -1866,7 +1866,7 @@ class TestRepositoryCompareIndexToTree:
             object_id="test_commit_123",
             committer_date=commit_datetime,
             created_at=commit_datetime,
-            generation_number=0
+            generation=0
         )
 
         database.sqlite.insert(sample_commit)
@@ -2242,3 +2242,205 @@ class TestRepositoryCheckout:
                 result.error
                 == "You have uncommitted changes. Please commit or stash them before checkout."
             )
+
+class TestFindMergeBase:
+    
+    def test_base_merge_with_simple_graph(self, repository: Repository):
+        repository.init()
+        commit_store = repository.commit_store
+        
+        a = commit_store.save_commit("A", "0")
+        b = commit_store.save_commit("B", "1", a)
+        c = commit_store.save_commit("C", "1", a)
+        
+        assert a == repository.find_merge_base(b, c)
+        
+    def test_base_merge_with_graph_1(self, repository: Repository):
+        repository.init()
+        commit_store = repository.commit_store
+        
+        a = commit_store.save_commit("A", "0")
+        b = commit_store.save_commit("B", "1", a)
+        c = commit_store.save_commit("C", "1", a)
+        d = commit_store.save_commit("D", "2", c)
+        
+        assert a == repository.find_merge_base(b, d)
+        
+    def test_base_merge_with_graph_2(self, repository: Repository):
+        repository.init()
+        commit_store = repository.commit_store
+        
+        a = commit_store.save_commit("A", "0")
+        b = commit_store.save_commit("B", "1", a)
+        c = commit_store.save_commit("C", "1", a)
+        d = commit_store.save_commit("D", "2", c)
+        e = commit_store.save_commit("E", "3", d)
+        
+        assert a == repository.find_merge_base(b, e)
+        assert a == repository.find_merge_base(b, d)
+        assert a == repository.find_merge_base(b, c)
+        
+    def test_base_merge_with_graph_3(self, repository: Repository):
+        repository.init()
+        commit_store = repository.commit_store
+        
+        a = commit_store.save_commit("A", "0")
+        
+        b = commit_store.save_commit("B", "1", a)
+        f = commit_store.save_commit("F", "2", b)
+        g = commit_store.save_commit("G", "3", f)
+        
+        c = commit_store.save_commit("C", "1", a)
+        d = commit_store.save_commit("D", "2", c)
+        e = commit_store.save_commit("E", "3", d)
+        
+        assert a == repository.find_merge_base(e, g)
+        
+    def test_base_merge_with_graph_4(self, repository: Repository):
+        repository.init()
+        commit_store = repository.commit_store
+        
+        a = commit_store.save_commit("A", "0")
+        
+        c = commit_store.save_commit("C", "1", a)
+        d = commit_store.save_commit("D", "2", c)
+        e = commit_store.save_commit("E", "3", d)
+        
+        h = commit_store.save_commit("H", "3", d)        
+        i = commit_store.save_commit("I", "4", h)        
+        j = commit_store.save_commit("J", "5", i)
+        
+        assert d == repository.find_merge_base(e, j)
+        
+    def test_base_merge_with_graph_5(self, repository: Repository):
+        repository.init()
+        commit_store = repository.commit_store
+        
+        a = commit_store.save_commit("A", "0")
+        
+        c = commit_store.save_commit("C", "1", a)
+        d = commit_store.save_commit("D", "2", c)
+        e = commit_store.save_commit("E", "3", d)
+        
+        h = commit_store.save_commit("H", "3", d)       
+        i = commit_store.save_commit("I", "4", h)
+        j = commit_store.save_commit("J", "5", i)
+        
+        k = commit_store.save_commit("K", "5", i)
+        
+        assert i == repository.find_merge_base(k, j)
+        assert d == repository.find_merge_base(e, k)
+        
+    def test_base_merge_with_graph_6(self, repository: Repository):
+        """
+              D - E 
+            /       \
+        A - B - C - M1 - F
+         \              /
+          A-1 - A-2 - A-3
+        """
+        repository.init()
+        commit_store = repository.commit_store
+        
+        a = commit_store.save_commit("A", "0")
+        b = commit_store.save_commit("B", "1", a)
+        c = commit_store.save_commit("C", "2", b)
+        
+        d = commit_store.save_commit("D", "2", b)
+        e = commit_store.save_commit("E", "3", d)
+        
+        m1 = commit_store.save_merge_commit("M1", [c, e], "4")
+        f = commit_store.save_commit("F", "4", m1)
+        
+        a_1 = commit_store.save_commit("A-1", "1", a)
+        a_2 = commit_store.save_commit("A-2", "2", a_1)
+        a_3 = commit_store.save_commit("A-3", "3", a_2)
+        
+        assert a == repository.find_merge_base(f, a_3)
+        
+    def test_base_merge_with_graph_7(self, repository: Repository):
+        """
+            F - - - - - G
+           /              \
+          /    H - I - J - "K"
+         /    / 
+        A - "B" - C - D - "E"
+        """
+        repository.init()
+        commit_store = repository.commit_store
+        
+        a = commit_store.save_commit("A", "0")
+        b = commit_store.save_commit("B", "1", a)
+        c = commit_store.save_commit("C", "2", b)
+        d = commit_store.save_commit("D", "3", c)
+        e = commit_store.save_commit("E", "4", d)
+        
+        h = commit_store.save_commit("H", "2", b)
+        i = commit_store.save_commit("I", "3", h)
+        j = commit_store.save_commit("J", "4", i)
+        
+        f = commit_store.save_commit("F", "1", a)
+        g = commit_store.save_commit("G", "2", f)
+        
+        k = commit_store.save_merge_commit("K", [g, j], "5")
+        
+        assert b == repository.find_merge_base(k, e)
+
+    def test_base_merge_with_graph_8(self, repository: Repository):
+        """
+              C - "D"
+             / 
+        A - B - C - D - "E"
+        """
+        repository.init()
+        commit_store = repository.commit_store
+        
+        a = commit_store.save_commit("A", "0")
+        b = commit_store.save_commit("B", "1", a)
+        c = commit_store.save_commit("C", "2", b)
+        d = commit_store.save_commit("D", "3", c)
+        e = commit_store.save_commit("E", "4", d)
+        
+        assert d == repository.find_merge_base(d, e)
+        
+    def test_base_merge_with_graph_9(self, repository: Repository):
+        """
+            I - J - O - K
+           / \  
+          /   F - G - H - L
+         /   /     \
+        A - B - C - D - E
+        """
+        repository.init()
+        commit_store = repository.commit_store
+        
+        a = commit_store.save_commit("A", "0")
+        
+        b = commit_store.save_commit("B", "1", a)
+        i = commit_store.save_commit("I", "1", a)
+        
+        f = commit_store.save_merge_commit("F", [i, b], "2")
+        j = commit_store.save_commit("J", "3", f)
+        o = commit_store.save_commit("O", "4", j)
+        k = commit_store.save_commit("K", "5", o)
+        
+        g = commit_store.save_commit("G", "4", f)
+        h = commit_store.save_commit("H", "5", g)
+        l = commit_store.save_commit("L", "5", h)
+        
+        c = commit_store.save_commit("C", "2", b)
+        d = commit_store.save_merge_commit("D", [g, c], "5")
+        e = commit_store.save_commit("E", "6", d)
+        
+
+        assert f == repository.find_merge_base(l, k)
+        assert g == repository.find_merge_base(l, e)
+        assert f == repository.find_merge_base(k, e)
+        
+        
+        
+        
+        
+        
+        
+        

@@ -116,16 +116,16 @@ class Database:
         return Blob(**blobs[0]) if blobs else None
 
     def list_blobs_by_ids(self, object_ids: list[str]) -> list[Blob]:
-        quoted_ids = ",".join([f"'{obj_id}'" for obj_id in object_ids])
+        id_params = ",".join([f"'{obj_id}'" for obj_id in object_ids])
         blobs = self.sqlite.select(
-            f"SELECT * FROM {Blob.table_name()} WHERE object_id IN ({quoted_ids})"
+            f"SELECT * FROM {Blob.table_name()} WHERE object_id IN ({id_params})"
         )
         return [Blob(**blob) for blob in blobs]
 
     def list_index_entries_by_paths(self, paths: list[str]) -> list[IndexEntry]:
-        quoted_paths = ",".join([f"'{path}'" for path in paths])
+        path_params = ",".join([f"'{path}'" for path in paths])
         index_entries = self.sqlite.select(
-            f"SELECT * FROM {IndexEntry.table_name()} WHERE path IN ({quoted_paths})"
+            f"SELECT * FROM {IndexEntry.table_name()} WHERE path IN ({path_params})"
         )
         return [IndexEntry(**index_entry) for index_entry in index_entries]
 
@@ -178,6 +178,13 @@ class Database:
             f"SELECT * FROM {Commit.table_name()} WHERE object_id = '{object_id}'"
         )
         return Commit(**commits[0]) if commits else None
+    
+    def list_commits(self, object_ids: list[str]) -> list[Commit]:
+        id_params = ",".join([f"'{path}'" for path in object_ids])
+        commits = self.sqlite.select(
+            f"SELECT * FROM {Commit.table_name()} WHERE object_id IN ({id_params})"
+        )
+        return [Commit(**commit) for commit in commits]
 
     def get_commit_children(self, parent_object_id: str) -> list[CommitParent]:
         commit_children = self.sqlite.select(

@@ -19,7 +19,7 @@ class Commit(Entity):
         committer_email: Committer email
         committer_date: Committer timestamp
         message: Commit message
-        generation number: Commit graph depth
+        generation: Commit graph depth
         created_at: Object creation time
     """
 
@@ -32,7 +32,7 @@ class Commit(Entity):
     committer_email: str
     committer_date: str
     message: str
-    generation_number: int
+    generation: int
     created_at: str
 
     @staticmethod
@@ -51,6 +51,9 @@ class Commit(Entity):
             "committer_email TEXT",
             "committer_date DATETIME",
             "message TEXT",
-            "generation_number INTEGER",
+            "generation INTEGER",
             "created_at DATETIME",
         ]
+
+    def __eq__(self, commit: "Commit") -> bool:
+        return self.object_id == commit.object_id
