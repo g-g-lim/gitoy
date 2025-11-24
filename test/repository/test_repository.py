@@ -162,7 +162,7 @@ class TestRepositoryAddIndex:
 
             assert result.success is True
 
-            hash = repository.hash(test_file_path)
+            hash = repository.hash_file.hash(test_file_path)
             test_file_entry = repository.convert.path_to_index_entry(test_file_path)
 
             entry_from_db = sqlite.select(f"SELECT * FROM {IndexEntry.table_name()}")
@@ -174,9 +174,9 @@ class TestRepositoryAddIndex:
 
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 1
-            assert blobs[0]["object_id"] == repository.hash(test_file_path)
+            assert blobs[0]["object_id"] == repository.hash_file.hash(test_file_path)
 
-            compressed = repository.compress(test_file_path)
+            compressed = repository.compress_file.compress(test_file_path)
             assert blobs[0]["data"] == compressed
             assert blobs[0]["size"] == test_file_path.stat().st_size
 
@@ -250,7 +250,7 @@ class TestRepositoryAddIndex:
 
         with patch("os.getcwd", return_value=test_directory.as_posix()):
             result = repository.add_index([test_large_file_path.name])
-            compressed = repository.compress(test_large_file_path)
+            compressed = repository.compress_file.compress(test_large_file_path)
 
             assert result.success is True
 
@@ -260,7 +260,7 @@ class TestRepositoryAddIndex:
 
             blobs = sqlite.select(f"SELECT * FROM {Blob.table_name()}")
             assert len(blobs) == 1
-            assert blobs[0]["object_id"] == repository.hash(test_large_file_path)
+            assert blobs[0]["object_id"] == repository.hash_file.hash(test_large_file_path)
             assert blobs[0]["data"] == compressed
             assert blobs[0]["size"] == test_large_file_path.stat().st_size
 

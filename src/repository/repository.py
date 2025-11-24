@@ -115,12 +115,6 @@ class Repository:
         self.database.delete_branch(branch)
         return Result.Ok(None)
 
-    def compress(self, path: Path) -> bytes:
-        return self.compress_file.compress(path)
-
-    def hash(self, path: Path) -> str:
-        return self.hash_file.hash(path)
-
     def add_index(self, paths: list[str]):
         result = self.path_validator.validate(paths)
         if result.failed:
